@@ -1,0 +1,6 @@
+# Ejemplo de configuración para la base de datos MySQL
+# Copia este archivo como 'database.properties' y asigna tus credenciales reales
+
+db.url=jdbc:mysql://localhost:3306/hotel_db
+db.user=usuario
+db.password=contraseña
