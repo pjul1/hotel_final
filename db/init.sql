@@ -5,14 +5,14 @@ USE hotel_db;
 -- 1. TABLA BASE: Usuario
 -- -----------------------------------------------------------------------------
 CREATE TABLE Usuario (
-    usuario_id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    usuarioId BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(50) NOT NULL,
     apellido VARCHAR(50) NOT NULL,
     email VARCHAR(50) NOT NULL UNIQUE KEY,
     dni VARCHAR(50) NOT NULL UNIQUE KEY,
     telefono VARCHAR(50) NOT NULL,
-    nombre_usuario VARCHAR(50) NOT NULL,
-    contraseña VARCHAR(50) NOT NULL,
+    nombreUsuario VARCHAR(50) NOT NULL,
+    contrasenia VARCHAR(50) NOT NULL,
     activo BOOLEAN NOT NULL DEFAULT TRUE -- Baja lógica (TRUE: activo, FALSE: inactivo)
 );
 
@@ -22,38 +22,38 @@ CREATE TABLE Usuario (
 
 -- Rol: Administrador
 CREATE TABLE Administrador (
-    usuario_id BIGINT UNSIGNED PRIMARY KEY,
-    CONSTRAINT fk_administrador_usuario FOREIGN KEY (usuario_id)
-    REFERENCES Usuario(usuario_id) ON DELETE CASCADE
+    usuarioId BIGINT UNSIGNED PRIMARY KEY,
+    CONSTRAINT fk_administrador_usuario FOREIGN KEY (usuarioId)
+        REFERENCES Usuario(usuarioId) ON DELETE CASCADE
 );
 
 -- Rol: Conserje
 CREATE TABLE Conserje (
-    usuario_id BIGINT UNSIGNED PRIMARY KEY,
+    usuarioId BIGINT UNSIGNED PRIMARY KEY,
     turno ENUM('mañana', 'tarde', 'noche') NOT NULL,
     salario DECIMAL(9, 2) NOT NULL,
-    CONSTRAINT fk_conserje_usuario FOREIGN KEY (usuario_id)
-        REFERENCES Usuario(usuario_id) ON DELETE CASCADE
+    CONSTRAINT fk_conserje_usuario FOREIGN KEY (usuarioId)
+        REFERENCES Usuario(usuarioId) ON DELETE CASCADE
 );
 
 -- Rol: Pasajero (Cliente que realiza reservas)
 CREATE TABLE Pasajero (
-    usuario_id BIGINT UNSIGNED PRIMARY KEY,
+    usuarioId BIGINT UNSIGNED PRIMARY KEY,
     origen VARCHAR(50) NOT NULL,
-    domicilio_origen VARCHAR(50) NOT NULL,
-    CONSTRAINT fk_pasajero_usuario FOREIGN KEY (usuario_id)
-        REFERENCES Usuario(usuario_id) ON DELETE CASCADE
+    domicilioOrigen VARCHAR(50) NOT NULL,
+    CONSTRAINT fk_pasajero_usuario FOREIGN KEY (usuarioId)
+        REFERENCES Usuario(usuarioId) ON DELETE CASCADE
 );
 
 -- -----------------------------------------------------------------------------
 -- 3. TABLA: Habitacion
 -- -----------------------------------------------------------------------------
 CREATE TABLE Habitacion (
-    habitacion_id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    numero_habitacion INT UNSIGNED UNIQUE KEY NOT NULL,
-    tipo_habitacion ENUM('habitacion_simple', 'habitacion_doble', 'suite') NOT NULL,
+    habitacionId BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    numeroHabitacion INT UNSIGNED UNIQUE KEY NOT NULL,
+    tipoHabitacion ENUM('habitacion_simple', 'habitacion_doble', 'suite') NOT NULL,
     estado ENUM('disponible', 'ocupada', 'reservada', 'no_disponible') NOT NULL,
-    motivo_bloqueo ENUM('limpieza', 'reparacion', 'desinfeccion', 'otro') NULL,
+    motivoBloqueo ENUM('limpieza', 'reparacion', 'desinfeccion', 'otro') NULL,
     activo BOOLEAN NOT NULL DEFAULT TRUE -- Baja lógica para inhabilitar habitaciones
 );
 
@@ -61,21 +61,21 @@ CREATE TABLE Habitacion (
 -- 4. TABLA: Reserva
 -- -----------------------------------------------------------------------------
 CREATE TABLE Reserva (
-    reserva_id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    reservaId BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     precio BIGINT UNSIGNED NOT NULL,
-    cantidad_pasajeros TINYINT UNSIGNED NOT NULL,
-    estado_reserva ENUM('activa', 'cumplida', 'cancelada') NOT NULL,
-    duracion_estadia INT UNSIGNED NOT NULL,
-    dia_reservado DATETIME NOT NULL,
-    check_in DATETIME NULL,
-    check_out DATETIME NULL,
-    habitacion_id BIGINT UNSIGNED NOT NULL,
-    usuario_id BIGINT UNSIGNED NOT NULL,
+    cantidadPasajeros TINYINT UNSIGNED NOT NULL,
+    estadoReserva ENUM('activa', 'cumplida', 'cancelada') NOT NULL,
+    duracionEstadia INT UNSIGNED NOT NULL,
+    diaReservado DATETIME NOT NULL,
+    checkIn DATETIME NULL,
+    checkOut DATETIME NULL,
+    habitacion BIGINT UNSIGNED NOT NULL,
+    pasajero BIGINT UNSIGNED NOT NULL,
 
-    CONSTRAINT fk_reserva_habitacion FOREIGN KEY (habitacion_id)
-        REFERENCES Habitacion(habitacion_id),
-    CONSTRAINT fk_reserva_usuario FOREIGN KEY (usuario_id)
-        REFERENCES Pasajero(usuario_id)
+    CONSTRAINT fk_reserva_habitacion FOREIGN KEY (habitacion)
+        REFERENCES Habitacion(habitacionId),
+    CONSTRAINT fk_reserva_usuario FOREIGN KEY (pasajero)
+        REFERENCES Pasajero(usuarioId)
 );
 
 USE hotel_db;
@@ -83,7 +83,7 @@ USE hotel_db;
 -- =============================================================================
 -- 1. CARGA DE USUARIOS
 -- =============================================================================
-INSERT INTO Usuario (nombre, apellido, email, dni, telefono, nombre_usuario, contraseña, activo) VALUES
+INSERT INTO Usuario (nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, activo) VALUES
 ('Carlos', 'Gómez', 'carlos.gomez@email.com', '30111222', '2234111111', 'admin1', 'admin123', true),
 ('Mariana', 'López', 'mariana.lopez@email.com', '31222333', '2234222222', 'mlopez', 'conserje123', true),
 ('Roberto', 'Fernández', 'roberto.f@email.com', '32333444', '2234333333', 'rfernandez', 'conserje456', true),
@@ -103,16 +103,16 @@ INSERT INTO Usuario (nombre, apellido, email, dni, telefono, nombre_usuario, con
 -- =============================================================================
 -- 2. CARGA DE ROLES
 -- =============================================================================
-INSERT INTO Administrador (usuario_id) VALUES (1);
+INSERT INTO Administrador (usuarioId) VALUES (1);
 
-INSERT INTO Conserje (usuario_id, turno, salario) VALUES
+INSERT INTO Conserje (usuarioId, turno, salario) VALUES
 (2, 'mañana', 450000.00),
 (3, 'tarde', 460000.00),
 (4, 'mañana', 450000.00),
 (5, 'tarde', 460000.00),
 (6, 'noche', 490000.00);
 
-INSERT INTO Pasajero (usuario_id, origen, domicilio_origen) VALUES
+INSERT INTO Pasajero (usuarioId, origen, domicilioOrigen) VALUES
 (7, 'Buenos Aires', 'Av. Corrientes 1234'),
 (8, 'Córdoba', 'Av. Colón 567'),
 (9, 'Rosario', 'Calle Italia 890'),
@@ -126,7 +126,7 @@ INSERT INTO Pasajero (usuario_id, origen, domicilio_origen) VALUES
 -- =============================================================================
 -- 3. CARGA DE HABITACIONES
 -- =============================================================================
-INSERT INTO Habitacion (numero_habitacion, tipo_habitacion, estado, motivo_bloqueo, activo) VALUES
+INSERT INTO Habitacion (numeroHabitacion, tipoHabitacion, estado, motivoBloqueo, activo) VALUES
 (101, 'habitacion_simple', 'disponible', NULL, true),
 (102, 'habitacion_simple', 'ocupada', NULL, true),
 (103, 'habitacion_simple', 'reservada', NULL, true),
@@ -146,7 +146,7 @@ INSERT INTO Habitacion (numero_habitacion, tipo_habitacion, estado, motivo_bloqu
 -- =============================================================================
 -- 4. CARGA DE RESERVAS
 -- =============================================================================
-INSERT INTO Reserva (precio, cantidad_pasajeros, estado_reserva, duracion_estadia, dia_reservado, check_in, check_out, habitacion_id, usuario_id) VALUES
+INSERT INTO Reserva (precio, cantidadPasajeros, estadoReserva, duracionEstadia, diaReservado, checkIn, checkOut, habitacion, pasajero) VALUES
 (40000, 1, 'cumplida', 2, '2026-10-01 10:00:00', '2026-10-01 14:00:00', '2026-10-03 10:00:00', 1, 7),
 (80000, 2, 'activa', 3, '2026-11-01 11:30:00', '2026-11-05 15:00:00', NULL, 2, 8),
 (120000, 2, 'activa', 2, '2026-11-02 09:15:00', NULL, NULL, 3, 9),
@@ -162,4 +162,3 @@ INSERT INTO Reserva (precio, cantidad_pasajeros, estado_reserva, duracion_estadi
 (180000, 3, 'activa', 3, '2026-11-06 09:00:00', NULL, NULL, 13, 10),
 (120000, 2, 'cancelada', 2, '2026-10-28 17:00:00', NULL, NULL, 14, 11),
 (220000, 4, 'cumplida', 4, '2026-10-29 11:45:00', '2026-10-30 14:00:00', '2026-11-03 10:00:00', 15, 12);
-
