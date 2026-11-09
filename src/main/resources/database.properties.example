@@ -2,5 +2,5 @@
 # Copia este archivo como 'database.properties' y asigna tus credenciales reales
 
 db.url=jdbc:mysql://localhost:3306/hotel_db
-db.user=usuario
-db.password=contraseña
+db.user=lea_user
+db.password=mi_password

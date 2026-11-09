@@ -1,0 +1,81 @@
+/* Fondo general del Dashboard */
+.root {
+    -fx-background-color: #0f172a; /* El azul noche profundo de tu login */
+}
+
+/* El menú superior */
+.menu-bar {
+    -fx-background-color: #0b0f19;
+    -fx-border-color: #1e293b;
+    -fx-border-width: 0 0 1px 0;
+}
+.menu-bar .label {
+    -fx-text-fill: #94a3b8;
+}
+
+/* Panel Izquierdo del Formulario */
+.vbox-form {
+    -fx-background-color: #0b0f19; /* Un tono más oscuro muy elegante */
+    -fx-border-color: #1e293b;
+    -fx-border-width: 0 1px 0 0; /* Línea sutil divisoria a la derecha */
+}
+
+/* Etiquetas de texto (Equipo, Stock, Nombre) */
+.text {
+    -fx-fill: #94a3b8; /* Gris moderno */
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+/* Campos de entrada */
+.text-field {
+    -fx-background-color: #1e293b;
+    -fx-background-radius: 6px;
+    -fx-text-fill: #f1f5f9;
+    -fx-padding: 8px;
+}
+
+/* Botones en el HBox */
+.button {
+    -fx-background-color: #6366f1; /* El violeta/índigo de tu login */
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6px;
+    -fx-padding: 8px 15px;
+    -fx-cursor: hand;
+}
+.button:hover {
+    -fx-background-color: #4f46e5;
+}
+
+/* --- TABLAS MODERNAS --- */
+.table-view {
+    -fx-background-color: transparent;
+    -fx-border-color: #1e293b;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+}
+.table-view .column-header-background {
+    -fx-background-color: #1e293b;
+    -fx-padding: 6px 0;
+}
+.table-view .column-header .label {
+    -fx-text-fill: #94a3b8;
+    -fx-font-weight: bold;
+}
+.table-row-cell {
+    -fx-background-color: #0f172a;
+    -fx-border-color: #1e293b;
+    -fx-border-width: 0 0 1px 0;
+}
+.table-row-cell:odd {
+    -fx-background-color: #141b2d; /* Efecto cebra sutil */
+}
+.table-row-cell:hover {
+    -fx-background-color: #1e293b;
+}
+.table-row-cell:selected {
+    -fx-background-color: #6366f1;
+}
+

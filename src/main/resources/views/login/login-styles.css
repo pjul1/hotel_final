@@ -1,0 +1,70 @@
+/* Estilo para el contenedor principal (la tarjeta blanca) */
+.root-container {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-padding: 30px;
+    /* Sombra suave y difuminada en lugar del borde marrón antiguo */
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.1), 15, 0, 0, 5);
+}
+
+/* Estilo para el título "SIGN IN" */
+.title-label {
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1a1a1a;
+}
+
+/* Estilo para las etiquetas de texto (User y Password) */
+.input-label {
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #666666;
+}
+
+/* Estilo para los campos de texto e inputs */
+.text-field {
+    -fx-background-color: #f4f5f7;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+    -fx-border-color: transparent;
+    -fx-padding: 10px;
+    -fx-font-size: 14px;
+    -fx-text-fill: #333333;
+}
+
+/* Efecto cuando el usuario hace clic dentro del input (Focus) */
+.text-field:focused {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #4f46e5; /* Borde sutil color índigo moderno */
+    -fx-border-width: 1.5px;
+}
+
+/* Estilo para el botón "Continue" */
+.modern-button {
+    -fx-background-color: #4f46e5; /* Color índigo de tendencia */
+    -fx-background-radius: 8px;
+    -fx-text-fill: #ffffff;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 12px 30px;
+    -fx-cursor: hand;
+}
+
+/* Efecto Hover: Cambia ligeramente de color al pasar el cursor */
+.modern-button:hover {
+    -fx-background-color: #4338ca;
+}
+
+/* Efecto Pressed: Se oscurece un poco al hacer clic */
+.modern-button:pressed {
+    -fx-background-color: #3730a3;
+}
+
+.main-background {
+    /* Puedes usar un color sólido moderno (ej. un azul noche muy oscuro) */
+    -fx-background-color: #0f172a;
+}
