@@ -64,7 +64,7 @@ CREATE TABLE Habitacion (
 -- -----------------------------------------------------------------------------
 CREATE TABLE Reserva (
     reservaId BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    precio BIGINT UNSIGNED NOT NULL,
+    precio DECIMAL(10, 2) UNSIGNED NOT NULL,
     cantidadPasajeros TINYINT UNSIGNED NOT NULL,
     estadoReserva ENUM('ACTIVA', 'CUMPLIDA', 'CANCELADA') NOT NULL,
     duracionEstadia INT UNSIGNED NOT NULL,
