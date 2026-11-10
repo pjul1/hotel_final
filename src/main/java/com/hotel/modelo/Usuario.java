@@ -1,5 +1,7 @@
 package com.hotel.modelo;
 
+import com.hotel.modelo.enums.TipoUsuario;
+
 /**
  * Representa la entidad base de un usuario en el sistema del hotel.
  * Esta clase sirve como superclase abstracta para Administrador, Conserje y Pasajero.
@@ -33,6 +35,9 @@ public abstract class Usuario {
     /** Estado del usuario en el sistema para la baja lógica. */
     private boolean activo;
 
+    /** Tipo de usuario (Administrador, Conserje, Pasajero). */
+    private TipoUsuario tipoUsuario;
+
     /**
      * Constructor predeterminado.
      * Inicializa el estado del usuario como activo por defecto.
@@ -55,7 +60,8 @@ public abstract class Usuario {
      */
     public Usuario( long usuarioId, String nombre, String apellido,
                     String email, String dni, String telefono,
-                    String nombreUsuario, String contrasenia){
+                    String nombreUsuario, String contrasenia,
+                    TipoUsuario tipoUsuario){
 
         this.usuarioId = usuarioId;
         this.nombre = nombre;
@@ -66,6 +72,7 @@ public abstract class Usuario {
         this.nombreUsuario = nombreUsuario;
         this.contrasenia = contrasenia;
         this.activo = true; // 'activo' Está activo de forma predeterminada.
+        this.tipoUsuario = tipoUsuario;
     }
 
     /**
@@ -82,23 +89,25 @@ public abstract class Usuario {
      */
      public Usuario( String nombre, String apellido,
                     String email, String dni, String telefono,
-                    String nombreUsuario, String contrasenia){
+                    String nombreUsuario, String contrasenia, TipoUsuario tipoUsuario){
 
-        this.nombre = nombre;
-        this.apellido = apellido;
-        this.email = email;
-        this.dni = dni;
-        this.telefono = telefono;
-        this.nombreUsuario = nombreUsuario;
-        this.contrasenia = contrasenia;
-        this.activo = true; // 'activo' Está activo de forma predeterminada.
+         this.nombre = nombre;
+         this.apellido = apellido;
+         this.email = email;
+         this.dni = dni;
+         this.telefono = telefono;
+         this.nombreUsuario = nombreUsuario;
+         this.contrasenia = contrasenia;
+         this.activo = true; // 'activo' Está activo de forma predeterminada.
+         this.tipoUsuario = tipoUsuario;
      }
 
      @Override
      public String toString(){
          return "ID="+usuarioId+", nombre=" +nombre+ ", apellido="+apellido+", email=" +email+
                  ", dni=" +dni+", telefono=" +telefono+ ", nombreUsuario=" +nombreUsuario+
-                 ", contrasenia="+contrasenia+ "; está activo=" +activo+ "]";
+                 ", contrasenia="+contrasenia+ "; está activo=" +activo+
+                 ", tipo de usuario="+tipoUsuario+"]";
      }
      @Override
      public int hashCode(){
@@ -188,5 +197,13 @@ public abstract class Usuario {
 
     public void setActivo(boolean activo) {
         this.activo = activo;
+    }
+
+    public TipoUsuario getTipoUsuario() {
+        return tipoUsuario;
+    }
+
+    public void setTipoUsuario(TipoUsuario tipoUsuario) {
+        this.tipoUsuario = tipoUsuario;
     }
 }

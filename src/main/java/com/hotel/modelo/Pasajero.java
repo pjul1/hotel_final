@@ -1,6 +1,8 @@
 package com.hotel.modelo;
 
 
+import com.hotel.modelo.enums.TipoUsuario;
+
 /**
  * Representa la entidad de un Pasajero (cliente del hotel).
  */
@@ -34,10 +36,11 @@ public class Pasajero extends Usuario {
      * @param domicilioOrigen Domicilio de origen.
      */
     public Pasajero(
-                    long usuarioId, String nombre, String apellido,
-                    String email, String dni, String telefono,
-                    String nombreUsuario, String contrasenia, String origen, String domicilioOrigen) {
-        super(usuarioId, nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia);
+            long usuarioId, String nombre, String apellido,
+            String email, String dni, String telefono,
+            String nombreUsuario, String contrasenia, String origen, String domicilioOrigen,
+            TipoUsuario tipoUsuario) {
+        super(usuarioId, nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, tipoUsuario);
         this.origen = origen;
         this.domicilioOrigen = domicilioOrigen;
     }
@@ -58,8 +61,9 @@ public class Pasajero extends Usuario {
     public Pasajero(
                     String nombre, String apellido,
                     String email, String dni, String telefono,
-                    String nombreUsuario, String contrasenia, String origen, String domicilioOrigen) {
-        super(nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia);
+                    String nombreUsuario, String contrasenia, String origen, String domicilioOrigen,
+                    TipoUsuario tipoUsuario) {
+        super(nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, tipoUsuario);
         this.origen = origen;
         this.domicilioOrigen = domicilioOrigen;
     }

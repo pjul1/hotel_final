@@ -1,5 +1,7 @@
 package com.hotel.modelo;
 
+import com.hotel.modelo.enums.TipoUsuario;
+
 /**
  * Representa la entidad de un Administrador dentro del sistema del hotel.
  */
@@ -18,8 +20,9 @@ public class Administrador extends Usuario {
      * @param contrasenia   Contraseña de acceso.
      */
     public Administrador(long usuarioId, String nombre, String apellido, String email,
-                         String dni, String telefono, String nombreUsuario, String contrasenia) {
-        super(usuarioId, nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia);
+                         String dni, String telefono, String nombreUsuario, String contrasenia,
+                         TipoUsuario tipoUsuario) {
+        super(usuarioId, nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, tipoUsuario);
     }
 
     /**
@@ -34,8 +37,9 @@ public class Administrador extends Usuario {
      * @param contrasenia   Contraseña de acceso.
      */
     public Administrador(String nombre, String apellido, String email, String dni,
-                         String telefono, String nombreUsuario, String contrasenia) {
-        super(nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia);
+                         String telefono, String nombreUsuario, String contrasenia,
+                         TipoUsuario tipoUsuario) {
+        super(nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, tipoUsuario);
     }
 
     /**

@@ -15,7 +15,7 @@ CREATE TABLE Usuario (
     nombreUsuario VARCHAR(50) NOT NULL,
     contrasenia VARCHAR(50) NOT NULL,
     activo BOOLEAN NOT NULL DEFAULT TRUE, -- Baja lógica (TRUE: activo, FALSE: inactivo)
-    tipoUsuario ENUM('administrador', 'conserje', 'pasajero') not null
+    tipoUsuario ENUM('ADMINISTRADOR', 'CONSERJE', 'PASAJERO') not null
 );
 
 -- -----------------------------------------------------------------------------
@@ -32,7 +32,7 @@ CREATE TABLE Administrador (
 -- Rol: Conserje
 CREATE TABLE Conserje (
     usuarioId BIGINT UNSIGNED PRIMARY KEY,
-    turno ENUM('mañana', 'tarde', 'noche') NOT NULL,
+    turno ENUM('MANIANA', 'TARDE', 'NOCHE') NOT NULL,
     salario DECIMAL(9, 2) NOT NULL,
     CONSTRAINT fk_conserje_usuario FOREIGN KEY (usuarioId)
         REFERENCES Usuario(usuarioId) ON DELETE CASCADE
@@ -53,9 +53,9 @@ CREATE TABLE Pasajero (
 CREATE TABLE Habitacion (
     habitacionId BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     numeroHabitacion INT UNSIGNED UNIQUE KEY NOT NULL,
-    tipoHabitacion ENUM('habitacion_simple', 'habitacion_doble', 'suite') NOT NULL,
-    estado ENUM('disponible', 'ocupada', 'reservada', 'no_disponible') NOT NULL,
-    motivoBloqueo ENUM('limpieza', 'reparacion', 'desinfeccion', 'otro') NULL,
+    tipoHabitacion ENUM('HABITACION_SIMPLE', 'HABITACION_DOBLE', 'SUITE') NOT NULL,
+    estadoHabitacion ENUM('DISPONIBLE', 'OCUPADA', 'RESERVADA', 'NO_DISPONIBLE') NOT NULL,
+    motivoBloqueo ENUM('LIMPIEZA', 'REPARACION', 'DESINFECCION', 'OTRO') NULL,
     activo BOOLEAN NOT NULL DEFAULT TRUE -- Baja lógica para inhabilitar habitaciones
 );
 
@@ -66,7 +66,7 @@ CREATE TABLE Reserva (
     reservaId BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     precio BIGINT UNSIGNED NOT NULL,
     cantidadPasajeros TINYINT UNSIGNED NOT NULL,
-    estadoReserva ENUM('activa', 'cumplida', 'cancelada') NOT NULL,
+    estadoReserva ENUM('ACTIVA', 'CUMPLIDA', 'CANCELADA') NOT NULL,
     duracionEstadia INT UNSIGNED NOT NULL,
     diaReservado DATETIME NOT NULL,
     checkIn DATETIME NULL,
