@@ -47,6 +47,11 @@ public abstract class Usuario {
         this.activo = true;
     }
 
+    public Usuario(TipoUsuario tipoUsuario) {
+        this.activo = true;
+        this.tipoUsuario = tipoUsuario;
+    }
+
     /**
      * Constructor completo para reinstanciar usuarios existentes desde la base de datos.
      *
