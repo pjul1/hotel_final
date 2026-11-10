@@ -1,3 +1,4 @@
+DROP DATABASE IF EXISTS hotel_db;
 CREATE DATABASE IF NOT EXISTS hotel_db;
 USE hotel_db;
 
@@ -13,7 +14,8 @@ CREATE TABLE Usuario (
     telefono VARCHAR(50) NOT NULL,
     nombreUsuario VARCHAR(50) NOT NULL,
     contrasenia VARCHAR(50) NOT NULL,
-    activo BOOLEAN NOT NULL DEFAULT TRUE -- Baja lógica (TRUE: activo, FALSE: inactivo)
+    activo BOOLEAN NOT NULL DEFAULT TRUE, -- Baja lógica (TRUE: activo, FALSE: inactivo)
+    tipoUsuario ENUM('administrador', 'conserje', 'pasajero') not null
 );
 
 -- -----------------------------------------------------------------------------
@@ -83,22 +85,22 @@ USE hotel_db;
 -- =============================================================================
 -- 1. CARGA DE USUARIOS
 -- =============================================================================
-INSERT INTO Usuario (nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, activo) VALUES
-('Carlos', 'Gómez', 'carlos.gomez@email.com', '30111222', '2234111111', 'admin1', 'admin123', true),
-('Mariana', 'López', 'mariana.lopez@email.com', '31222333', '2234222222', 'mlopez', 'conserje123', true),
-('Roberto', 'Fernández', 'roberto.f@email.com', '32333444', '2234333333', 'rfernandez', 'conserje456', true),
-('Esteban', 'Morales', 'esteban.morales@email.com', '33444555', '2234444444', 'emorales', 'conserje789', true),
-('Lucía', 'Pérez', 'lucia.perez@email.com', '34555666', '2234555555', 'lperez', 'conserje012', true),
-('Gonzalo', 'Martínez', 'gonzalo.m@email.com', '35666777', '2234666666', 'gmartinez', 'conserje345', true),
-('Juan', 'Rodríguez', 'juan.rodriguez@email.com', '36777888', '2234777777', 'jrodriguez', 'pasajero1', true),
-('Ana', 'Sánchez', 'ana.sanchez@email.com', '37888999', '2234888888', 'asanchez', 'pasajero2', true),
-('Diego', 'Romero', 'diego.romero@email.com', '38999000', '2234999999', 'dromero', 'pasajero3', true),
-('Sofia', 'Sánchez', 'sofia.222@email.com', '39000111', '2234000111', 'sdiaz', 'pasajero4', true),
-('Lucas', 'Álvarez', 'lucas.alvarez@email.com', '40111222', '2234111222', 'lalvarez', 'pasajero5', true),
-('Valentina', 'Torres', 'valentina.t@email.com', '41222333', '2234222333', 'vtorres', 'pasajero6', true),
-('Mateo', 'Ruiz', 'mateo.ruiz@email.com', '42333444', '2234333444', 'mruiz', 'pasajero7', true),
-('Camila', 'Benítez', 'camila.b@email.com', '43444555', '2234444555', 'cbenitez', 'pasajero8', true),
-('Joaquín', 'Acosta', 'joaquin.a@email.com', '44555666', '2234555666', 'jacosta', 'pasajero9', true);
+INSERT INTO Usuario (nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, activo, tipoUsuario) VALUES
+('Carlos', 'Gómez', 'carlos.gomez@email.com', '30111222', '2234111111', 'admin1', 'admin123', true, 'administrador'),
+('Mariana', 'López', 'mariana.lopez@email.com', '31222333', '2234222222', 'mlopez', 'conserje123', true, 'conserje'),
+('Roberto', 'Fernández', 'roberto.f@email.com', '32333444', '2234333333', 'rfernandez', 'conserje456', true, 'conserje'),
+('Esteban', 'Morales', 'esteban.morales@email.com', '33444555', '2234444444', 'emorales', 'conserje789', true, 'conserje'),
+('Lucía', 'Pérez', 'lucia.perez@email.com', '34555666', '2234555555', 'lperez', 'conserje012', true, 'conserje'),
+('Gonzalo', 'Martínez', 'gonzalo.m@email.com', '35666777', '2234666666', 'gmartinez', 'conserje345', true, 'conserje'),
+('Juan', 'Rodríguez', 'juan.rodriguez@email.com', '36777888', '2234777777', 'jrodriguez', 'pasajero1', true, 'pasajero'),
+('Ana', 'Sánchez', 'ana.sanchez@email.com', '37888999', '2234888888', 'asanchez', 'pasajero2', true, 'pasajero'),
+('Diego', 'Romero', 'diego.romero@email.com', '38999000', '2234999999', 'dromero', 'pasajero3', true, 'pasajero'),
+('Sofia', 'Sánchez', 'sofia.222@email.com', '39000111', '2234000111', 'sdiaz', 'pasajero4', true, 'pasajero'),
+('Lucas', 'Álvarez', 'lucas.alvarez@email.com', '40111222', '2234111222', 'lalvarez', 'pasajero5', true, 'pasajero'),
+('Valentina', 'Torres', 'valentina.t@email.com', '41222333', '2234222333', 'vtorres', 'pasajero6', true, 'pasajero'),
+('Mateo', 'Ruiz', 'mateo.ruiz@email.com', '42333444', '2234333444', 'mruiz', 'pasajero7', true, 'pasajero'),
+('Camila', 'Benítez', 'camila.b@email.com', '43444555', '2234444555', 'cbenitez', 'pasajero8', true, 'pasajero'),
+('Joaquín', 'Acosta', 'joaquin.a@email.com', '44555666', '2234555666', 'jacosta', 'pasajero9', true, 'pasajero');
 
 -- =============================================================================
 -- 2. CARGA DE ROLES
