@@ -42,8 +42,8 @@ public abstract class Usuario {
      * Constructor predeterminado.
      * Inicializa el estado del usuario como activo por defecto.
      */
-    public Usuario(TipoUsuario tipoUsuario) {
-        this.tipoUsuario = tipoUsuario;
+
+    public Usuario() {
         this.activo = true;
     }
 
@@ -58,6 +58,7 @@ public abstract class Usuario {
      * @param telefono      Teléfono de contacto.
      * @param nombreUsuario Credencial de usuario para login.
      * @param contrasenia   Contraseña de acceso.
+     * @param tipoUsuario   Tipo de usuario (Pasajero, Conserje, Admin).
      */
     public Usuario( long usuarioId, String nombre, String apellido,
                     String email, String dni, String telefono,
@@ -87,6 +88,7 @@ public abstract class Usuario {
      * @param telefono      Teléfono de contacto.
      * @param nombreUsuario Credencial de usuario para login.
      * @param contrasenia   Contraseña de acceso.
+     * @param tipoUsuario   Tipo de usuario (Pasajero, Conserje, Admin).
      */
      public Usuario( String nombre, String apellido,
                     String email, String dni, String telefono,
