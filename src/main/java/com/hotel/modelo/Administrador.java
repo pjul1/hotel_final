@@ -5,7 +5,14 @@ import com.hotel.modelo.enums.TipoUsuario;
 /**
  * Representa la entidad de un Administrador dentro del sistema del hotel.
  */
-public class Administrador extends Usuario {
+public final class Administrador extends Usuario {
+
+    /**
+     * Constructor predeterminado.
+     */
+    public Administrador() {
+        super(TipoUsuario.ADMINISTRADOR);
+    }
 
     /**
      * Constructor completo para reinstanciar un Administrador desde la base de datos (con ID).
@@ -20,9 +27,8 @@ public class Administrador extends Usuario {
      * @param contrasenia   Contraseña de acceso.
      */
     public Administrador(long usuarioId, String nombre, String apellido, String email,
-                         String dni, String telefono, String nombreUsuario, String contrasenia,
-                         TipoUsuario tipoUsuario) {
-        super(usuarioId, nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, tipoUsuario);
+                         String dni, String telefono, String nombreUsuario, String contrasenia) {
+        super(usuarioId, nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, TipoUsuario.ADMINISTRADOR);
     }
 
     /**
@@ -37,16 +43,8 @@ public class Administrador extends Usuario {
      * @param contrasenia   Contraseña de acceso.
      */
     public Administrador(String nombre, String apellido, String email, String dni,
-                         String telefono, String nombreUsuario, String contrasenia,
-                         TipoUsuario tipoUsuario) {
-        super(nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, tipoUsuario);
-    }
-
-    /**
-     * Constructor predeterminado.
-     */
-    public Administrador() {
-        super();
+                         String telefono, String nombreUsuario, String contrasenia) {
+        super(nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, TipoUsuario.ADMINISTRADOR);
     }
 
 }

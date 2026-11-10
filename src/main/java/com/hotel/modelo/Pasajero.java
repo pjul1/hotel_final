@@ -6,7 +6,7 @@ import com.hotel.modelo.enums.TipoUsuario;
 /**
  * Representa la entidad de un Pasajero (cliente del hotel).
  */
-public class Pasajero extends Usuario {
+public final class Pasajero extends Usuario {
 
     /** Ciudad o provincia de origen del pasajero. */
     private String origen;
@@ -17,8 +17,8 @@ public class Pasajero extends Usuario {
     /**
      * Constructor predeterminado.
      */
-    public Pasajero(String origen, String domicilioOrigen) {
-        super();
+    public Pasajero() {
+        super(TipoUsuario.PASAJERO);
     }
 
     /**
@@ -38,9 +38,8 @@ public class Pasajero extends Usuario {
     public Pasajero(
             long usuarioId, String nombre, String apellido,
             String email, String dni, String telefono,
-            String nombreUsuario, String contrasenia, String origen, String domicilioOrigen,
-            TipoUsuario tipoUsuario) {
-        super(usuarioId, nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, tipoUsuario);
+            String nombreUsuario, String contrasenia, String origen, String domicilioOrigen) {
+        super(usuarioId, nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, TipoUsuario.PASAJERO);
         this.origen = origen;
         this.domicilioOrigen = domicilioOrigen;
     }
@@ -61,9 +60,8 @@ public class Pasajero extends Usuario {
     public Pasajero(
                     String nombre, String apellido,
                     String email, String dni, String telefono,
-                    String nombreUsuario, String contrasenia, String origen, String domicilioOrigen,
-                    TipoUsuario tipoUsuario) {
-        super(nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, tipoUsuario);
+                    String nombreUsuario, String contrasenia, String origen, String domicilioOrigen) {
+        super(nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, TipoUsuario.PASAJERO);
         this.origen = origen;
         this.domicilioOrigen = domicilioOrigen;
     }

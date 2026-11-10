@@ -42,7 +42,8 @@ public abstract class Usuario {
      * Constructor predeterminado.
      * Inicializa el estado del usuario como activo por defecto.
      */
-    public Usuario() {
+    public Usuario(TipoUsuario tipoUsuario) {
+        this.tipoUsuario = tipoUsuario;
         this.activo = true;
     }
 
