@@ -35,7 +35,7 @@
             <TextField fx:id="txtUser" prefWidth="220.0" styleClass="text-field" stylesheets="@login-styles.css" />
             <Text fill="#94a3b8" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="input-label" text="Contraseña" />
             <PasswordField fx:id="txtPassword" prefWidth="220.0" styleClass="text-field" stylesheets="@login-styles.css" />
-            <Button mnemonicParsing="false" prefWidth="220.0" styleClass="modern-button" stylesheets="@login-styles.css" text="Continuar">
+            <Button mnemonicParsing="false" onAction="#iniciarSesion" prefWidth="220.0" styleClass="modern-button" stylesheets="@login-styles.css" text="Continuar">
                <effect>
                   <Blend />
                </effect>
