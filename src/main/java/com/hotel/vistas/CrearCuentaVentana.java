@@ -67,7 +67,7 @@ public class CrearCuentaVentana {
         }
 
         txtDatosIncorrectos.setText("");
-        //agregar carga en db
+        //agregar carga en db cuando este creado el dao
     }
 
 
