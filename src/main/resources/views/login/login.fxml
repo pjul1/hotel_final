@@ -27,6 +27,9 @@
                      </bumpInput>
                   </Lighting>
                </effect>
+               <VBox.margin>
+                  <Insets left="20.0" />
+               </VBox.margin>
             </Text>
             <Text fill="#94a3b8" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="input-label" text="Usuario" />
             <TextField fx:id="txtUser" prefWidth="220.0" styleClass="text-field" stylesheets="@login-styles.css" />
