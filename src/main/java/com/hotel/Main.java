@@ -1,7 +1,10 @@
 package com.hotel;
 
-public class Main {
-    static void main() {
+import com.hotel.vistas.IniciadorVentana;
+import javafx.application.Application;
 
+public class Main {
+    public static void main(String[] args) {
+        Application.launch(IniciadorVentana.class, args);
     }
 }
