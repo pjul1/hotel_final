@@ -78,4 +78,12 @@
 .table-row-cell:selected {
     -fx-background-color: #6366f1;
 }
+.combo-box, .date-picker > .text-field {
+    -fx-background-color: #1e293b;
+    -fx-text-fill: #f1f5f9;
+}
+.combo-box .list-cell {
+    -fx-text-fill: #f1f5f9;
+    -fx-background-color: #1e293b;
+}
 
