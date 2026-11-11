@@ -10,7 +10,7 @@ public class IniciadorVentana extends Application{
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(IniciadorVentana.class.getResource("/views/login/login.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 320, 400);
+        Scene scene = new Scene(fxmlLoader.load(), 320, 420);
         stage.setTitle("Log in");
         stage.setScene(scene);
         stage.centerOnScreen();

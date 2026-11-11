@@ -10,7 +10,7 @@ public class ConexionDB {
     public static Connection getConexion(){
         Properties props = new Properties();
 
-        try(InputStream input = ConexionDB.class.getResourceAsStream("/database.properties")){
+        try(InputStream input = ConexionDB.class.getResourceAsStream("/database.properties.example")){
             if(input == null) { throw new RuntimeException("No se encontró el archivo 'database.properties' en el classpath."); }
             props.load(input);
 
