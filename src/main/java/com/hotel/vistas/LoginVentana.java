@@ -16,20 +16,21 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import com.hotel.config.*;
 
 public class LoginVentana {
     @FXML private TextField txtUser;
     @FXML private PasswordField txtPassword;
     @FXML private Text datosIncorrectos;
-/*
+
     @FXML
     void iniciarSesion(ActionEvent event){
         String user = txtUser.getText();
         String password = txtPassword.getText();
 
-        String sql = "SELECT nombreUsuario, contrasenia, tipoUsuario FROM usuario WHERE nombreUsuario = ? AND contrasenia = ?";
+        String sql = "SELECT nombreUsuario, contrasenia, tipoUsuario FROM Usuario WHERE nombreUsuario = ? AND contrasenia = ?";
 
-        try (Connection conn = ConexionBD.obtenerConexion();
+        try (Connection conn = ConexionDB.getConexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, user);
@@ -78,8 +79,6 @@ public class LoginVentana {
             datosIncorrectos.setText("Error de conexión con el sistema.");
         }
     }
-
- */
 
     @FXML
     void nuevoUsuario(ActionEvent event){
