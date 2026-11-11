@@ -5,7 +5,6 @@
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.effect.Blend?>
-<?import javafx.scene.effect.Light.Distant?>
 <?import javafx.scene.effect.Lighting?>
 <?import javafx.scene.effect.Shadow?>
 <?import javafx.scene.layout.AnchorPane?>
@@ -13,11 +12,11 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="380.0" prefWidth="320.0" styleClass="main-background" stylesheets="@login-styles.css" xmlns="http://javafx.com/javafx/25.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="380.0" prefWidth="320.0" styleClass="main-background" stylesheets="@login-styles.css" xmlns="http://javafx.com/javafx/25.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.hotel.vistas.LoginVentana">
    <children>
-      <VBox alignment="CENTER" layoutX="40.0" layoutY="57.0" prefHeight="266.0" prefWidth="240.0" spacing="15.0">
+      <VBox alignment="CENTER" layoutX="40.0" layoutY="35.0" prefHeight="266.0" prefWidth="240.0" spacing="15.0">
          <children>
-            <Text fill="#f8fafc" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="title-label" text="SIGN IN" wrappingWidth="106.107421875">
+            <Text fill="#f8fafc" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="title-label" text="INICIAR SESION" wrappingWidth="211.107421875">
                <font>
                   <Font size="22.0" />
                </font>
@@ -29,14 +28,22 @@
                   </Lighting>
                </effect>
             </Text>
-            <Text fill="#94a3b8" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="input-label" text="User" />
+            <Text fill="#94a3b8" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="input-label" text="Usuario" />
             <TextField fx:id="txtUser" prefWidth="220.0" styleClass="text-field" stylesheets="@login-styles.css" />
-            <Text fill="#94a3b8" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="input-label" text="Password" />
+            <Text fill="#94a3b8" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="input-label" text="Contraseña" />
             <PasswordField fx:id="txtPassword" prefWidth="220.0" styleClass="text-field" stylesheets="@login-styles.css" />
-            <Button mnemonicParsing="false" prefWidth="220.0" styleClass="modern-button" stylesheets="@login-styles.css" text="Continue">
+            <Button mnemonicParsing="false" prefWidth="220.0" styleClass="modern-button" stylesheets="@login-styles.css" text="Continuar">
                <effect>
                   <Blend />
                </effect>
+            </Button>
+            <Button maxHeight="30.0" mnemonicParsing="false" onAction="#nuevoUsuario" prefHeight="30.0" prefWidth="180.0" styleClass="modern-button" stylesheets="@login-styles.css" text="Crear cuenta">
+               <effect>
+                  <Blend />
+               </effect>
+               <VBox.margin>
+                  <Insets top="10.0" />
+               </VBox.margin>
             </Button>
             <Text fx:id="datosIncorrectos" fill="RED" strokeType="OUTSIDE" strokeWidth="0.0" textAlignment="CENTER" />
          </children>
