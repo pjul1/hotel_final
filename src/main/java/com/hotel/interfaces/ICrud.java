@@ -1,12 +1,10 @@
-package com.hotel.dao;
+package com.hotel.interfaces;
 
 import java.sql.SQLException;
-import java.util.List;
 
+/** Interfaz que implementa los métodos CRUD */
 public interface ICrud<T> {
     void agregar(T t) throws SQLException;
     void modificar(T t) throws SQLException;
-    void baja (long id) throws SQLException;
     T buscarPorId(long id) throws SQLException;
-    List<T> listar() throws SQLException;
 }

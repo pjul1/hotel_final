@@ -1,6 +1,10 @@
 package com.hotel.dao;
 
 import com.hotel.config.ConexionDB;
+import com.hotel.interfaces.IBajaLogica;
+import com.hotel.interfaces.ICrud;
+import com.hotel.interfaces.IListar;
+import com.hotel.interfaces.IListarPorEstado;
 import com.hotel.modelo.Pasajero;
 import com.hotel.modelo.enums.TipoUsuario;
 
@@ -11,10 +15,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PasajeroDao implements ICrud<Pasajero>, IBajaLogica<Pasajero> {
+/** Maneja las operaciones en la base de datos para los pasajeros. */
+public class PasajeroDao implements ICrud<Pasajero>, IBajaLogica, IListar<Pasajero>, IListarPorEstado<Pasajero> {
 
     @Override
     public void agregar(Pasajero pasajero) throws SQLException {
+        /** Hacemos dos comandos SQL para insertar en la tabla Usuario y Pasajero. */
         String sqlUser = "INSERT INTO Usuario (nombre, apellido, " +
                 "email, dni, telefono, nombreUsuario, contrasenia, " +
                 "activo, tipoUsuario) " +
@@ -110,6 +116,7 @@ public class PasajeroDao implements ICrud<Pasajero>, IBajaLogica<Pasajero> {
         }
     }
 
+    /** Usamos AND tipoUsuario = 'PASAJERO' para asegurar que el cambio se le aplica al Pasajero. */
     @Override
     public void baja(long id) throws SQLException {
         String sqlUser = "UPDATE Usuario SET activo = false WHERE usuarioId = ? AND tipoUsuario = 'PASAJERO'";
@@ -176,6 +183,30 @@ public class PasajeroDao implements ICrud<Pasajero>, IBajaLogica<Pasajero> {
                 "p.origen, p.domicilioOrigen " +
                 "FROM Usuario as u " +
                 "INNER JOIN Pasajero as p ON u.usuarioId = p.usuarioId WHERE u.activo = true";
+
+        List<Pasajero> list = new ArrayList<>();
+
+        try (Connection connection = ConexionDB.getConexion();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapearPasajero(rs));
+                }
+
+            }
+        }
+
+        return list;
+    }
+
+    @Override
+    public List<Pasajero> listarInactivos() throws SQLException {
+        String sql = "SELECT u.usuarioId, u.nombre, u.apellido, u.email, u.dni, " +
+                "u.telefono, u.nombreUsuario, u.contrasenia, u.activo, u.tipoUsuario, " +
+                "p.origen, p.domicilioOrigen " +
+                "FROM Usuario as u " +
+                "INNER JOIN Pasajero as p ON u.usuarioId = p.usuarioId WHERE u.activo = false";
 
         List<Pasajero> list = new ArrayList<>();
 

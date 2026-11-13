@@ -1,6 +1,10 @@
 package com.hotel.dao;
 
 import com.hotel.config.ConexionDB;
+import com.hotel.interfaces.IBajaLogica;
+import com.hotel.interfaces.ICrud;
+import com.hotel.interfaces.IListar;
+import com.hotel.interfaces.IListarPorEstado;
 import com.hotel.modelo.Conserje;
 import com.hotel.modelo.enums.TipoUsuario;
 import com.hotel.modelo.enums.Turno;
@@ -12,8 +16,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConserjeDao implements ICrud<Conserje>, IBajaLogica<Conserje> {
+/** Maneja las operaciones en la base de datos para los conserjes.*/
+public class ConserjeDao implements ICrud<Conserje>, IBajaLogica, IListar<Conserje>, IListarPorEstado<Conserje> {
 
+    /** Hacemos dos comandos SQL para insertar en la tabla Usuario y Conserje. */
     @Override
     public void agregar(Conserje conserje) throws SQLException {
         String sqlUser = "INSERT INTO Usuario (nombre, apellido, " +
@@ -111,6 +117,7 @@ public class ConserjeDao implements ICrud<Conserje>, IBajaLogica<Conserje> {
         }
     }
 
+    /** Usamos AND tipoUsuario = 'CONSERJE' para asegurar que el cambio se le aplica al Conserje. */
     @Override
     public void baja(long id) throws SQLException {
         String sqlUser = "UPDATE Usuario SET activo = false WHERE usuarioId = ? AND tipoUsuario = 'CONSERJE'";
@@ -177,6 +184,30 @@ public class ConserjeDao implements ICrud<Conserje>, IBajaLogica<Conserje> {
                 "p.salario, p.turno " +
                 "FROM Usuario as u " +
                 "INNER JOIN Conserje as p ON u.usuarioId = p.usuarioId WHERE u.activo = true";
+
+        List<Conserje> list = new ArrayList<>();
+
+        try (Connection connection = ConexionDB.getConexion();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapearConserje(rs));
+                }
+
+            }
+        }
+
+        return list;
+    }
+
+    @Override
+    public List<Conserje> listarInactivos() throws SQLException {
+        String sql = "SELECT u.usuarioId, u.nombre, u.apellido, u.email, u.dni, " +
+                "u.telefono, u.nombreUsuario, u.contrasenia, u.activo, u.tipoUsuario, " +
+                "p.salario, p.turno " +
+                "FROM Usuario as u " +
+                "INNER JOIN Conserje as p ON u.usuarioId = p.usuarioId WHERE u.activo = false";
 
         List<Conserje> list = new ArrayList<>();
 
