@@ -71,7 +71,7 @@
                      <HBox spacing="8.0">
                         <Button maxWidth="Infinity" style="-fx-background-color: #6366f1; -fx-text-fill: white;" text="Guardar" HBox.hgrow="ALWAYS" />
                         <Button maxWidth="Infinity" style="-fx-background-color: #1e293b; -fx-text-fill: white;" text="Modificar" HBox.hgrow="ALWAYS" />
-                        <Button style="-fx-background-color: #334155; -fx-text-fill: white;" text="Limpiar" />
+                        <Button onAction="#limpiar" style="-fx-background-color: #334155; -fx-text-fill: white;" text="Limpiar" />
                      </HBox>
                   </VBox>
                </left>
