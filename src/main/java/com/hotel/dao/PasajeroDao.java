@@ -11,7 +11,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PasajeroDao implements ICrud<Pasajero>{
+public class PasajeroDao implements ICrud<Pasajero>, IBajaLogica<Pasajero> {
 
     @Override
     public void agregar(Pasajero pasajero) throws SQLException {
@@ -169,6 +169,7 @@ public class PasajeroDao implements ICrud<Pasajero>{
         return list;
     }
 
+    @Override
     public List<Pasajero> listarActivos() throws SQLException {
         String sql = "SELECT u.usuarioId, u.nombre, u.apellido, u.email, u.dni, " +
                 "u.telefono, u.nombreUsuario, u.contrasenia, u.activo, u.tipoUsuario, " +
@@ -191,6 +192,18 @@ public class PasajeroDao implements ICrud<Pasajero>{
 
         return list;
     }
+
+    @Override
+    public void reactivar(long id) throws SQLException{
+        String sqlUser = "UPDATE Usuario SET activo = true WHERE usuarioId = ? AND tipoUsuario = 'PASAJERO'";
+
+        try(Connection connection = ConexionDB.getConexion();
+            PreparedStatement ps = connection.prepareStatement(sqlUser)){
+            ps.setLong(1, id);
+            ps.executeUpdate();
+        }
+    }
+
 
     private Pasajero mapearPasajero(ResultSet rs) throws SQLException{
         Pasajero pasajero = new Pasajero();
