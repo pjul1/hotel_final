@@ -18,7 +18,7 @@ public class ConexionDB {
         /**
          *  Guarda dentro de un InputStream los clave=valor dentro de database.properties
          */
-        try(InputStream input = ConexionDB.class.getResourceAsStream("/database.properties")){
+        try(InputStream input = ConexionDB.class.getResourceAsStream("/database.properties.example")){
             if(input == null) { throw new RuntimeException("No se encontró el archivo 'database.properties' en el classpath."); }
 
             // Guarda input en formato properties

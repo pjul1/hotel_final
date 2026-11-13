@@ -83,13 +83,13 @@
                         <Region HBox.hgrow="ALWAYS" />
                         <TextField fx:id="txtBuscarUsuario" prefWidth="250.0" promptText="Buscar por DNI, nombre o rol..." />
                      </HBox>
-                     <TableView fx:id="tablaUsuarios" VBox.vgrow="ALWAYS">
+                     <TableView fx:id="tablaUsuarios" onMouseClicked="#completarConClick" VBox.vgrow="ALWAYS">
                         <columns>
                            <TableColumn fx:id="colUsuarioId" text="ID" />
                            <TableColumn fx:id="colNombre" text="Nombre" />
                            <TableColumn fx:id="colApellido" text="Apellido" />
                            <TableColumn fx:id="colDni" text="DNI" />
-                           <TableColumn fx:id="colUsuario" text="Usuario" />
+                           <TableColumn fx:id="colEmail" text="Email" />
                            <TableColumn fx:id="colRol" text="Rol" />
                            <TableColumn fx:id="colActivo" text="Activo" />
                         </columns>
