@@ -16,6 +16,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 
 import java.sql.SQLException;
+import java.util.Locale;
 
 public class AdministradorVentana {
 
@@ -101,4 +102,26 @@ public class AdministradorVentana {
             }
         }
     }
+
+    /** Limpia los campos para ingresar texto */
+
+    @FXML
+    public void limpiar(){
+        txtNombre.clear();
+        txtApellido.clear();
+        txtDni.clear();
+        txtTelefono.clear();
+        txtEmail.clear();
+        txtNombreUsuario.clear();
+        txtContrasenia.clear();
+        txtSalario.clear();
+    }
+
+    /** Permite buscar en la tabla en tiempo real */
+
+    @FXML
+    public void buscar(){
+        ///NECESITO LOS SERVICE
+    }
+
 }
