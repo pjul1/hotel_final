@@ -1,10 +1,14 @@
 package com.hotel.vistas;
 
+import com.hotel.dao.PasajeroDao;
+import com.hotel.modelo.Pasajero;
 import javafx.fxml.FXML;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+
+import java.sql.SQLException;
 
 public class CrearCuentaVentana {
     @FXML private TextField txtNombre;
@@ -18,6 +22,7 @@ public class CrearCuentaVentana {
     @FXML private TextField txtOrigen;
     @FXML private TextField txtDomicilioOrigen;
     @FXML private Text txtDatosIncorrectos;
+    private PasajeroDao pasajeroDao = new PasajeroDao();
 
     @FXML
     public void cancelar(){
@@ -28,9 +33,9 @@ public class CrearCuentaVentana {
     public void registrarse() {
         String nombre = txtNombre.getText().trim();
         String apellido = txtApellido.getText().trim();
+        String email = txtEmail.getText().trim();
         String dni = txtDni.getText().trim();
         String telefono = txtTelefono.getText().trim();
-        String email = txtEmail.getText().trim();
         String usuario = txtNombreUsuario.getText().trim();
         String password = txtContrasenia.getText();
         String confirmPass = txtConfirmarContrasenia.getText();
@@ -67,6 +72,13 @@ public class CrearCuentaVentana {
         }
 
         txtDatosIncorrectos.setText("");
-        //agregar carga en db cuando este creado el dao
+        //agregar service ESTE TRY ES SOLA PARA PRUEBAS
+        try {
+            pasajeroDao.agregar(new Pasajero(nombre, apellido, email, dni, telefono, usuario, password, origen, domicilio));
+            txtDatosIncorrectos.setText("Usuario creado exitosamente");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("No se pudo cargar el pasajero en la base de datos");
+        }
     }
 }

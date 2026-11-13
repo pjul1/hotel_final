@@ -1,6 +1,7 @@
 package com.hotel.vistas;
 
 import com.hotel.Main;
+import com.hotel.dao.ConserjeDao;
 import com.hotel.modelo.Administrador;
 import com.hotel.modelo.Conserje;
 import com.hotel.modelo.Usuario;
@@ -13,6 +14,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
+
+import java.sql.SQLException;
 
 public class AdministradorVentana {
 
@@ -38,9 +41,10 @@ public class AdministradorVentana {
     @FXML TableView<Usuario> tablaUsuarios;
     private Usuario usuarioSeleccionado; // Sirve para guardar el usuario que se clickea
     private ObservableList<Usuario> listaUsuarios = FXCollections.observableArrayList();
+    private ConserjeDao conserjeDao = new ConserjeDao();
 
     @FXML
-    public void initialize(){
+    public void initialize() throws SQLException {
         // Configuramos las columnas para que lean las properties de la clase Producto
         colUsuarioId.setCellValueFactory(new PropertyValueFactory<>("usuarioId"));
         colNombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
@@ -49,9 +53,9 @@ public class AdministradorVentana {
         colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
         colRol.setCellValueFactory(new PropertyValueFactory<>("tipoUsuario"));
         colActivo.setCellValueFactory(new PropertyValueFactory<>("activo"));
-        listaUsuarios.add(new Administrador());
-        listaUsuarios.add(new Conserje());
+
         // Vinculamos la lista a la tabla
+        listaUsuarios.addAll(conserjeDao.listar()); ///SOLO PARA PRUEBAS DESPUES SE DEBE USAR EL SERVICE
         tablaUsuarios.setItems(listaUsuarios);
 
         cmbTipoUsuario.getItems().addAll(TipoUsuario.CONSERJE, TipoUsuario.PASAJERO);
