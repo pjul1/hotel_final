@@ -21,7 +21,7 @@ import java.util.Map;
  * mantiene un Map en memoria sincronizado con MySQL para resolver consultas, filtros
  * y búsquedas sin consultar continuamente la base de datos.
  */
-public class PasajeroService implements ICrud<Pasajero>, IBajaLogica, IListar<Pasajero>, IListarPorEstado<Pasajero> {
+public class PasajeroServicio implements ICrud<Pasajero>, IBajaLogica, IListar<Pasajero>, IListarPorEstado<Pasajero> {
 
     private final PasajeroDao pasajeroDao = new PasajeroDao();
 
@@ -29,7 +29,7 @@ public class PasajeroService implements ICrud<Pasajero>, IBajaLogica, IListar<Pa
     private final Map<Long, Pasajero> pasajerosPorId = new LinkedHashMap<>();
 
     /** Carga inicial de los pasajeros desde MySQL hacia la colección en memoria. */
-    public PasajeroService() {
+    public PasajeroServicio() {
         cargarDesdeBase();
     }
 

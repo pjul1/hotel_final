@@ -15,12 +15,16 @@ import com.hotel.modelo.enums.MotivoBloqueo;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Lógica de negocio de las habitaciones.
  * Implementa las mismas interfaces que HabitacionDao, pero sus métodos no lanzan SQLException:
  * los errores se convierten en HotelException con un mensaje para mostrar en pantalla.
+ * Mantiene un Set en memoria sincronizado con MySQL (Alternativa B) para resolver consultas
+ * y filtros sin consultar continuamente la base de datos.
  *
  * Estados: desde acá se pasa una habitación entre DISPONIBLE y NO_DISPONIBLE (bloqueo).
  * OCUPADA la manejan el check-in y el check-out de ReservaServicio. RESERVADA depende de la fecha:
@@ -36,6 +40,14 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
     private final HabitacionDao habitacionDao = new HabitacionDao();
     private final ReservaDao reservaDao = new ReservaDao();
 
+    /** Colección en memoria que garantiza unicidad de habitaciones y conserva el orden de carga. */
+    private final Set<Habitacion> habitaciones = new LinkedHashSet<>();
+
+    /** Carga inicial de las habitaciones desde MySQL hacia el Set en memoria. */
+    public HabitacionServicio() {
+        cargarDesdeBase();
+    }
+
     @Override
     public void agregar(Habitacion habitacion) {
         validarHabitacion(habitacion);
@@ -45,9 +57,11 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
             throw new HotelException("Una habitación nueva solo puede estar DISPONIBLE o NO_DISPONIBLE.");
         }
 
+        verificarNumeroDisponible(habitacion.getNumeroHabitacion(), 0);
+
         try {
-            verificarNumeroDisponible(habitacion.getNumeroHabitacion(), 0);
             habitacionDao.agregar(habitacion);
+            habitaciones.add(habitacion);
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("registrar la habitación", e);
         }
@@ -57,22 +71,25 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
     public void modificar(Habitacion habitacion) {
         validarHabitacion(habitacion);
 
+        Habitacion actual = obtenerExistente(habitacion.getHabitacionId());
+
+        // La baja y la reactivación tienen sus propios métodos (con sus reglas):
+        // modificar conserva el 'activo' que ya tiene la habitación en la base
+        habitacion.setActivo(actual.isActivo());
+
+        // OCUPADA y RESERVADA dependen de las reservas: no se cambian a mano desde acá
+        boolean cambiaEstado = actual.getEstadoHabitacion() != habitacion.getEstadoHabitacion();
+        if (cambiaEstado && (esEstadoDeReserva(actual.getEstadoHabitacion())
+                || esEstadoDeReserva(habitacion.getEstadoHabitacion()))) {
+            throw new HotelException("Los estados OCUPADA y RESERVADA se manejan desde las reservas.");
+        }
+
+        verificarNumeroDisponible(habitacion.getNumeroHabitacion(), habitacion.getHabitacionId());
+
         try {
-            Habitacion actual = obtenerExistente(habitacion.getHabitacionId());
-
-            // La baja y la reactivación tienen sus propios métodos (con sus reglas):
-            // modificar conserva el 'activo' que ya tiene la habitación en la base
-            habitacion.setActivo(actual.isActivo());
-
-            // OCUPADA y RESERVADA dependen de las reservas: no se cambian a mano desde acá
-            boolean cambiaEstado = actual.getEstadoHabitacion() != habitacion.getEstadoHabitacion();
-            if (cambiaEstado && (esEstadoDeReserva(actual.getEstadoHabitacion())
-                    || esEstadoDeReserva(habitacion.getEstadoHabitacion()))) {
-                throw new HotelException("Los estados OCUPADA y RESERVADA se manejan desde las reservas.");
-            }
-
-            verificarNumeroDisponible(habitacion.getNumeroHabitacion(), habitacion.getHabitacionId());
             habitacionDao.modificar(habitacion);
+            habitaciones.remove(actual);
+            habitaciones.add(habitacion);
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("modificar la habitación", e);
         }
@@ -93,6 +110,7 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
             }
 
             habitacionDao.baja(id);
+            habitacion.setActivo(false);
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("dar de baja la habitación", e);
         }
@@ -101,8 +119,9 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
     @Override
     public void reactivar(long id) {
         try {
-            obtenerExistente(id);
+            Habitacion habitacion = obtenerExistente(id);
             habitacionDao.reactivar(id);
+            habitacion.setActivo(true);
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("reactivar la habitación", e);
         }
@@ -129,6 +148,8 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
             }
 
             habitacionDao.actualizarEstado(id, EstadoHabitacion.NO_DISPONIBLE, motivo);
+            habitacion.setEstadoHabitacion(EstadoHabitacion.NO_DISPONIBLE);
+            habitacion.setMotivoBloqueo(motivo);
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("bloquear la habitación", e);
         }
@@ -148,6 +169,7 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
 
             habitacionDao.actualizarEstado(id, EstadoHabitacion.DISPONIBLE, null);
             habitacionDao.marcarReservadasPorFecha(LocalDate.now());
+            cargarDesdeBase();
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("liberar la habitación", e);
         }
@@ -168,6 +190,7 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
             LocalDate hoy = LocalDate.now();
             habitacionDao.liberarReservadasSinReservaVigente(hoy);
             habitacionDao.marcarReservadasPorFecha(hoy);
+            cargarDesdeBase();
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("actualizar los estados de las habitaciones", e);
         }
@@ -193,7 +216,7 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
         List<Habitacion> list = new ArrayList<>();
 
         try {
-            for (Habitacion habitacion : habitacionDao.listarActivos()) {
+            for (Habitacion habitacion : listarActivos()) {
                 if (motivoNoDisponible(habitacion, desde, dias, 0) == null) {
                     list.add(habitacion);
                 }
@@ -219,50 +242,52 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
         }
     }
 
-    /** Devuelve la habitación con ese ID, o null si no existe. */
+    /** Devuelve la habitación con ese ID desde el Set en memoria, o null si no existe. */
     @Override
     public Habitacion buscarPorId(long id) {
-        try {
-            return habitacionDao.buscarPorId(id);
-        } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("buscar la habitación", e);
+        for (Habitacion habitacion : habitaciones) {
+            if (habitacion.getHabitacionId() == id) {
+                return habitacion;
+            }
         }
+        return null;
     }
 
-    /** Devuelve la habitación con ese número (ej: 101), o null si no existe. */
+    /** Devuelve la habitación con ese número (ej: 101) desde el Set en memoria, o null si no existe. */
     public Habitacion buscarPorNumero(int numeroHabitacion) {
-        try {
-            return habitacionDao.buscarPorNumero(numeroHabitacion);
-        } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("buscar la habitación", e);
+        for (Habitacion habitacion : habitaciones) {
+            if (habitacion.getNumeroHabitacion() == numeroHabitacion) {
+                return habitacion;
+            }
         }
+        return null;
     }
 
     @Override
     public List<Habitacion> listar() {
-        try {
-            return habitacionDao.listar();
-        } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("listar las habitaciones", e);
-        }
+        return new ArrayList<>(habitaciones);
     }
 
     @Override
     public List<Habitacion> listarActivos() {
-        try {
-            return habitacionDao.listarActivos();
-        } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("listar las habitaciones activas", e);
+        List<Habitacion> activos = new ArrayList<>();
+        for (Habitacion habitacion : habitaciones) {
+            if (habitacion.isActivo()) {
+                activos.add(habitacion);
+            }
         }
+        return activos;
     }
 
     @Override
     public List<Habitacion> listarInactivos() {
-        try {
-            return habitacionDao.listarInactivos();
-        } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("listar las habitaciones inactivas", e);
+        List<Habitacion> inactivos = new ArrayList<>();
+        for (Habitacion habitacion : habitaciones) {
+            if (!habitacion.isActivo()) {
+                inactivos.add(habitacion);
+            }
         }
+        return inactivos;
     }
 
     /** Lista las habitaciones activas en el estado indicado (ej: las DISPONIBLES para reservar). */
@@ -271,10 +296,22 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
             throw new HotelException("Debe indicar el estado de las habitaciones a listar.");
         }
 
+        List<Habitacion> porEstado = new ArrayList<>();
+        for (Habitacion habitacion : habitaciones) {
+            if (habitacion.isActivo() && habitacion.getEstadoHabitacion() == estado) {
+                porEstado.add(habitacion);
+            }
+        }
+        return porEstado;
+    }
+
+    /** Carga inicial desde MySQL al Set en memoria. */
+    private void cargarDesdeBase() {
         try {
-            return habitacionDao.listarPorEstado(estado);
+            habitaciones.clear();
+            habitaciones.addAll(habitacionDao.listar());
         } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("listar las habitaciones", e);
+            throw ValidacionesServicio.errorDeBase("cargar las habitaciones", e);
         }
     }
 
@@ -303,9 +340,9 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
         }
     }
 
-    /** Verifica que el número no lo use otra habitación (idActual = 0 si es un alta nueva). */
-    private void verificarNumeroDisponible(int numeroHabitacion, long idActual) throws SQLException {
-        Habitacion existente = habitacionDao.buscarPorNumero(numeroHabitacion);
+    /** Verifica en memoria que el número no lo use otra habitación (idActual = 0 si es un alta nueva). */
+    private void verificarNumeroDisponible(int numeroHabitacion, long idActual) {
+        Habitacion existente = buscarPorNumero(numeroHabitacion);
         if (existente != null && existente.getHabitacionId() != idActual) {
             throw new HotelException("Ya existe una habitación con el número " + numeroHabitacion + ".");
         }
@@ -356,9 +393,9 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
         return estado == EstadoHabitacion.OCUPADA || estado == EstadoHabitacion.RESERVADA;
     }
 
-    /** Trae la habitación de la base, o lanza una excepción si no existe. */
-    private Habitacion obtenerExistente(long id) throws SQLException {
-        Habitacion habitacion = habitacionDao.buscarPorId(id);
+    /** Trae la habitación desde el Set en memoria, o lanza una excepción si no existe. */
+    private Habitacion obtenerExistente(long id) {
+        Habitacion habitacion = buscarPorId(id);
         if (habitacion == null) {
             throw new HotelException("No existe una habitación con ID " + id + ".");
         }

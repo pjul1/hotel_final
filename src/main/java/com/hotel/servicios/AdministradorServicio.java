@@ -11,13 +11,13 @@ import java.sql.SQLException;
  * Mantiene en memoria la instancia cargada desde la base de datos para evitar consultas repetidas
  * y valida sus datos antes de actualizarla.
  */
-public class AdministradorService {
+public class AdministradorServicio {
 
     private final AdministradorDao administradorDao = new AdministradorDao();
     private Administrador administradorEnMemoria;
 
     /** Carga el administrador desde la base de datos al iniciar el servicio. */
-    public AdministradorService() {
+    public AdministradorServicio() {
         cargarDesdeBase();
     }
 
