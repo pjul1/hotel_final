@@ -17,12 +17,17 @@ import com.hotel.modelo.enums.EstadoReserva;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Lógica de negocio de las reservas: alta, modificación, cancelación, check-in y check-out.
  * Implementa las mismas interfaces que ReservaDao (ICrud e IListar; no tiene baja lógica:
  * una reserva se cancela). Sus métodos no lanzan SQLException, sino HotelException o sus subclases.
+ * Mantiene un Set en memoria sincronizado con MySQL (Alternativa B) para resolver consultas
+ * y filtros sin consultar continuamente la base de datos.
  *
  * Período de una reserva: desde diaReservado (día de llegada planificado) durante duracionEstadia días.
  * Ese período queda reservado aunque el pasajero llegue más tarde: el check-in y el check-out registran
@@ -38,6 +43,14 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
     private final HabitacionDao habitacionDao = new HabitacionDao();
     private final PasajeroDao pasajeroDao = new PasajeroDao();
     private final HabitacionServicio habitacionServicio = new HabitacionServicio();
+
+    /** Colección en memoria que garantiza unicidad de reservas y conserva el orden de carga. */
+    private final Set<Reserva> reservas = new LinkedHashSet<>();
+
+    /** Carga inicial de las reservas desde MySQL hacia el Set en memoria. */
+    public ReservaServicio() {
+        cargarDesdeBase();
+    }
 
     /**
      * Registra una nueva reserva, siempre que la habitación esté libre en su período.
@@ -63,6 +76,7 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
             reserva.setCheckOut(null);
 
             reservaDao.agregar(reserva);
+            reservas.add(reserva);
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("registrar la reserva", e);
         }
@@ -106,6 +120,8 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
             reserva.setCheckOut(null);
 
             reservaDao.modificar(reserva);
+            reservas.remove(actual);
+            reservas.add(reserva);
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("modificar la reserva", e);
         }
@@ -121,6 +137,7 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
             verificarPendiente(reserva, "cancelar");
 
             reservaDao.cambiarEstado(reservaId, EstadoReserva.CANCELADA);
+            reserva.setEstadoReserva(EstadoReserva.CANCELADA);
             liberarSiEstaReservada(reserva.getHabitacion());
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("cancelar la reserva", e);
@@ -154,7 +171,10 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
                         + " no está disponible para el check-in.");
             }
 
-            reservaDao.registrarCheckIn(reservaId, LocalDateTime.now());
+            LocalDateTime ahora = LocalDateTime.now();
+            reservaDao.registrarCheckIn(reservaId, ahora);
+            reserva.setCheckIn(ahora);
+            habitacion.setEstadoHabitacion(EstadoHabitacion.OCUPADA);
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("registrar el check-in", e);
         }
@@ -172,7 +192,11 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
                 throw new ReservaInvalidaException("La reserva " + reservaId + " todavía no hizo el check-in.");
             }
 
-            reservaDao.registrarCheckOut(reservaId, LocalDateTime.now());
+            LocalDateTime ahora = LocalDateTime.now();
+            reservaDao.registrarCheckOut(reservaId, ahora);
+            reserva.setCheckOut(ahora);
+            reserva.setEstadoReserva(EstadoReserva.CUMPLIDA);
+            reserva.getHabitacion().setEstadoHabitacion(EstadoHabitacion.DISPONIBLE);
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("registrar el check-out", e);
         }
@@ -181,53 +205,66 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
         habitacionServicio.actualizarEstadosPorFecha();
     }
 
-    /** Devuelve la reserva con ese ID, o null si no existe. */
+    /** Devuelve la reserva con ese ID desde el Set en memoria, o null si no existe. */
     @Override
     public Reserva buscarPorId(long id) {
-        try {
-            return reservaDao.buscarPorId(id);
-        } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("buscar la reserva", e);
+        for (Reserva reserva : reservas) {
+            if (reserva.getReservaId() == id) {
+                return reserva;
+            }
         }
+        return null;
     }
 
     @Override
     public List<Reserva> listar() {
-        try {
-            return reservaDao.listar();
-        } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("listar las reservas", e);
-        }
+        return new ArrayList<>(reservas);
     }
 
-    /** Lista todas las reservas de un pasajero (historial y reservas activas). */
+    /** Lista todas las reservas de un pasajero (historial y reservas activas) desde el Set en memoria. */
     public List<Reserva> listarPorPasajero(long pasajeroId) {
-        try {
-            return reservaDao.listarPorPasajero(pasajeroId);
-        } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("listar las reservas del pasajero", e);
+        List<Reserva> delPasajero = new ArrayList<>();
+        for (Reserva reserva : reservas) {
+            if (reserva.getPasajero() != null && reserva.getPasajero().getUsuarioId() == pasajeroId) {
+                delPasajero.add(reserva);
+            }
         }
+        return delPasajero;
     }
 
-    /** Lista todas las reservas de una habitación. */
+    /** Lista todas las reservas de una habitación desde el Set en memoria. */
     public List<Reserva> listarPorHabitacion(long habitacionId) {
-        try {
-            return reservaDao.listarPorHabitacion(habitacionId);
-        } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("listar las reservas de la habitación", e);
+        List<Reserva> deLaHabitacion = new ArrayList<>();
+        for (Reserva reserva : reservas) {
+            if (reserva.getHabitacion() != null && reserva.getHabitacion().getHabitacionId() == habitacionId) {
+                deLaHabitacion.add(reserva);
+            }
         }
+        return deLaHabitacion;
     }
 
-    /** Lista las reservas en el estado indicado (Activa, Cumplida, Cancelada). */
+    /** Lista las reservas en el estado indicado (Activa, Cumplida, Cancelada) desde el Set en memoria. */
     public List<Reserva> listarPorEstado(EstadoReserva estado) {
         if (estado == null) {
             throw new HotelException("Debe indicar el estado de las reservas a listar.");
         }
 
+        List<Reserva> porEstado = new ArrayList<>();
+        for (Reserva reserva : reservas) {
+            if (reserva.getEstadoReserva() == estado) {
+                porEstado.add(reserva);
+            }
+        }
+        return porEstado;
+    }
+
+    /** Carga inicial desde MySQL al Set en memoria. */
+    private void cargarDesdeBase() {
         try {
-            return reservaDao.listarPorEstado(estado);
+            reservas.clear();
+            reservas.addAll(reservaDao.listar());
         } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("listar las reservas", e);
+            throw ValidacionesServicio.errorDeBase("cargar las reservas", e);
         }
     }
 
@@ -295,12 +332,13 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
     private void liberarSiEstaReservada(Habitacion habitacion) throws SQLException {
         if (habitacion.getEstadoHabitacion() == EstadoHabitacion.RESERVADA) {
             habitacionDao.actualizarEstado(habitacion.getHabitacionId(), EstadoHabitacion.DISPONIBLE, null);
+            habitacion.setEstadoHabitacion(EstadoHabitacion.DISPONIBLE);
         }
     }
 
-    /** Trae la reserva de la base, o lanza una excepción si no existe. */
-    private Reserva obtenerExistente(long id) throws SQLException {
-        Reserva reserva = reservaDao.buscarPorId(id);
+    /** Trae la reserva desde el Set en memoria, o lanza una excepción si no existe. */
+    private Reserva obtenerExistente(long id) {
+        Reserva reserva = buscarPorId(id);
         if (reserva == null) {
             throw new ReservaInvalidaException("No existe una reserva con ID " + id + ".");
         }
