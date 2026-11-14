@@ -13,13 +13,19 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.Locale;
 
 public class AdministradorVentana {
 
+    /** TAB DE GESTION DE USUARIOS Y ROLES */
     @FXML ComboBox<TipoUsuario> cmbTipoUsuario;
     @FXML ComboBox<Turno> cmbTurno;
     @FXML TextField txtNombre;
@@ -44,6 +50,10 @@ public class AdministradorVentana {
     private ObservableList<Usuario> listaUsuarios = FXCollections.observableArrayList();
     private ConserjeDao conserjeDao = new ConserjeDao();
 
+    /** TAB DE CONFIGURACION DE HABITACIONES */
+
+
+
     @FXML
     public void initialize() throws SQLException {
         // Configuramos las columnas para que lean las properties de la clase Producto
@@ -66,6 +76,45 @@ public class AdministradorVentana {
     @FXML
     public void salir(){
         ((Stage) txtNombre.getScene().getWindow()).close();
+    }
+
+    @FXML
+    public void generarBackup() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Guardar Copia de Seguridad");
+        fileChooser.setInitialFileName("backup_hotel_" + java.time.LocalDate.now() + ".sql");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo SQL (*.sql)", "*.sql"));
+
+        Stage stage = (Stage) txtNombre.getScene().getWindow();  /** OBTENEMOS LA STAGE ACTUAL DE LA VENTANA */
+        File archivoDestino = fileChooser.showSaveDialog(stage); /** SIRVE PARA BLOQUEAR LA PANTALLA HASTA QUE TERMINE EL GUARDADO */
+
+        if (archivoDestino == null) {
+            return;
+        }
+
+        try (PrintWriter writer = new PrintWriter(new FileWriter(archivoDestino))) {
+            /** ESCRIBIMOS DENTRO DEL ARCHIVO SQL DE BACKUP */
+            writer.println("-- BACKUP DEL SISTEMA HOTELERO");
+            writer.println("-- Fecha: " + java.time.LocalDateTime.now());
+            writer.println();
+
+            writer.println("-- TABLA USUARIO");
+            for (Usuario u : listaUsuarios) { //TENEMOS QUE CAMBIAR listaUsuarios POR EL SERVICE!!!!!!!
+                writer.println("INSERT INTO Usuario (usuarioId, nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, activo, tipoUsuario) VALUES (" +
+                        u.getUsuarioId() + ", '" + u.getNombre() + "', '" + u.getApellido() + "', '" +
+                        u.getEmail() + "', '" + u.getDni() + "', '" + u.getTelefono() + "', '" +
+                        u.getNombreUsuario() + "', '" + u.getContrasenia() + "', " + u.isActivo() + ", '" +
+                        u.getTipoUsuario() + "');");
+            }
+
+            writer.println();
+
+            System.out.println("Se realizo el backup");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Error al realizar el backup");
+        }
     }
 
     @FXML
@@ -123,5 +172,7 @@ public class AdministradorVentana {
     public void buscar(){
         ///NECESITO LOS SERVICE
     }
+
+
 
 }
