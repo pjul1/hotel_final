@@ -33,7 +33,7 @@
             <Label style="-fx-text-fill: #f1f5f9; -fx-font-size: 16px; -fx-font-weight: bold;" text="Panel de Administración del Hotel" />
             <Region HBox.hgrow="ALWAYS" />
             <Label fx:id="lblUsuarioLogueado" style="-fx-text-fill: #94a3b8;" text="Administrador: Sesión Activa" />
-            <Button style="-fx-background-color: #1e293b; -fx-text-fill: #f1f5f9;" text="Generar Backup" />
+            <Button onAction="#generarBackup" style="-fx-background-color: #1e293b; -fx-text-fill: #f1f5f9;" text="Generar Backup" />
             <Button onAction="#salir" style="-fx-background-color: #ef4444; -fx-text-fill: white;" text="Salir" />
          </HBox>
       </VBox>
@@ -71,7 +71,7 @@
                      <HBox spacing="8.0">
                         <Button maxWidth="Infinity" style="-fx-background-color: #6366f1; -fx-text-fill: white;" text="Guardar" HBox.hgrow="ALWAYS" />
                         <Button maxWidth="Infinity" style="-fx-background-color: #1e293b; -fx-text-fill: white;" text="Modificar" HBox.hgrow="ALWAYS" />
-                        <Button onAction="#limpiar" style="-fx-background-color: #334155; -fx-text-fill: white;" text="Limpiar" />
+                        <Button onAction="#limpiarUsuario" style="-fx-background-color: #334155; -fx-text-fill: white;" text="Limpiar" />
                      </HBox>
                   </VBox>
                </left>
@@ -83,7 +83,7 @@
                         <Region HBox.hgrow="ALWAYS" />
                         <TextField fx:id="txtBuscarUsuario" prefWidth="250.0" promptText="Buscar por DNI, nombre o rol..." />
                      </HBox>
-                     <TableView fx:id="tablaUsuarios" onMouseClicked="#completarConClick" VBox.vgrow="ALWAYS">
+                     <TableView fx:id="tablaUsuarios" onMouseClicked="#completarConClickUsuario" VBox.vgrow="ALWAYS">
                         <columns>
                            <TableColumn fx:id="colUsuarioId" text="ID" />
                            <TableColumn fx:id="colNombre" text="Nombre" />
@@ -113,7 +113,7 @@
                      <HBox spacing="8.0">
                         <Button maxWidth="Infinity" style="-fx-background-color: #6366f1; -fx-text-fill: white;" text="Guardar" HBox.hgrow="ALWAYS" />
                         <Button maxWidth="Infinity" style="-fx-background-color: #1e293b; -fx-text-fill: white;" text="Actualizar" HBox.hgrow="ALWAYS" />
-                        <Button style="-fx-background-color: #334155; -fx-text-fill: white;" text="Limpiar" />
+                        <Button onAction="#limpiarHabitacion" style="-fx-background-color: #334155; -fx-text-fill: white;" text="Limpiar" />
                      </HBox>
                   </VBox>
                </left>
@@ -121,7 +121,7 @@
                   <VBox spacing="12.0">
                      <padding><Insets bottom="20" left="20" right="20" top="20" /></padding>
                      <Label style="-fx-text-fill: #f1f5f9; -fx-font-size: 15px; -fx-font-weight: bold;" text="Inventario de Habitaciones" />
-                     <TableView fx:id="tablaHabitaciones" VBox.vgrow="ALWAYS">
+                     <TableView fx:id="tablaHabitaciones" onMouseClicked="#completarConClickHabitacion" VBox.vgrow="ALWAYS">
                         <columns>
                            <TableColumn fx:id="colHabId" text="ID" />
                            <TableColumn fx:id="colNumHab" text="Número" />
