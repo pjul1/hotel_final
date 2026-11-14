@@ -2,18 +2,19 @@ package com.hotel.servicios;
 
 import com.hotel.dao.HabitacionDao;
 import com.hotel.dao.ReservaDao;
+import com.hotel.excepciones.HabitacionNoDisponible;
 import com.hotel.excepciones.HotelException;
 import com.hotel.interfaces.IBajaLogica;
 import com.hotel.interfaces.ICrud;
 import com.hotel.interfaces.IListar;
 import com.hotel.interfaces.IListarPorEstado;
 import com.hotel.modelo.Habitacion;
-import com.hotel.modelo.Reserva;
 import com.hotel.modelo.enums.EstadoHabitacion;
-import com.hotel.modelo.enums.EstadoReserva;
 import com.hotel.modelo.enums.MotivoBloqueo;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,8 +22,14 @@ import java.util.List;
  * Implementa las mismas interfaces que HabitacionDao, pero sus métodos no lanzan SQLException:
  * los errores se convierten en HotelException con un mensaje para mostrar en pantalla.
  *
- * Los estados OCUPADA y RESERVADA los maneja ReservaServicio (reservas, check-in y check-out);
- * desde acá solo se pasa una habitación entre DISPONIBLE y NO_DISPONIBLE (bloqueo).
+ * Estados: desde acá se pasa una habitación entre DISPONIBLE y NO_DISPONIBLE (bloqueo).
+ * OCUPADA la manejan el check-in y el check-out de ReservaServicio. RESERVADA depende de la fecha:
+ * una habitación está RESERVADA solo mientras transcurre el período de una reserva sin check-in
+ * (antes de que empiece sigue DISPONIBLE). Como la base no cambia sola, actualizarEstadosPorFecha()
+ * se llama al iniciar sesión o al abrir la pantalla de habitaciones.
+ *
+ * Disponibilidad en un período: puedeOcupar() y listarDisponiblesEnPeriodo() consultan la ocupación
+ * actual y las reservas ACTIVA (período = diaReservado + duracionEstadia días).
  */
 public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IListar<Habitacion>, IListarPorEstado<Habitacion> {
 
@@ -71,15 +78,18 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
         }
     }
 
-    /** Da de baja la habitación, siempre que no tenga reservas activas. */
+    /**
+     * Da de baja la habitación, siempre que no tenga reservas pendientes (con el pasajero alojado
+     * o con un período que todavía no terminó). Una reserva vencida sin check-in no la impide.
+     */
     @Override
     public void baja(long id) {
         try {
             Habitacion habitacion = obtenerExistente(id);
 
-            if (tieneReservasActivas(id)) {
+            if (reservaDao.tieneReservasPendientes(id, LocalDate.now())) {
                 throw new HotelException("La habitación " + habitacion.getNumeroHabitacion()
-                        + " tiene reservas activas: no se puede dar de baja.");
+                        + " tiene reservas pendientes: no se puede dar de baja.");
             }
 
             habitacionDao.baja(id);
@@ -124,7 +134,10 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
         }
     }
 
-    /** Libera una habitación bloqueada y la deja DISPONIBLE. */
+    /**
+     * Libera una habitación bloqueada y la deja DISPONIBLE
+     * (o RESERVADA, si hoy transcurre el período de una de sus reservas).
+     */
     public void liberar(long id) {
         try {
             Habitacion habitacion = obtenerExistente(id);
@@ -134,8 +147,75 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
             }
 
             habitacionDao.actualizarEstado(id, EstadoHabitacion.DISPONIBLE, null);
+            habitacionDao.marcarReservadasPorFecha(LocalDate.now());
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("liberar la habitación", e);
+        }
+    }
+
+    /**
+     * Pone al día los estados según la fecha de hoy: pasa a RESERVADA las habitaciones cuyo período
+     * de reserva está transcurriendo (sin check-in) y devuelve a DISPONIBLE las que ya no lo tienen.
+     * No toca las OCUPADA ni las NO_DISPONIBLE, y nunca cambia el estado de las reservas.
+     *
+     * Cuándo se llama (la base no cambia sola al pasar los días):
+     * - PENDIENTE en las vistas: al iniciar sesión o al abrir la pantalla de habitaciones, antes de listarlas.
+     * - Automáticamente desde ReservaServicio, después de agregar, modificar y checkOut, porque esas
+     *   acciones pueden cambiar qué habitación está reservada hoy.
+     */
+    public void actualizarEstadosPorFecha() {
+        try {
+            LocalDate hoy = LocalDate.now();
+            habitacionDao.liberarReservadasSinReservaVigente(hoy);
+            habitacionDao.marcarReservadasPorFecha(hoy);
+        } catch (SQLException e) {
+            throw ValidacionesServicio.errorDeBase("actualizar los estados de las habitaciones", e);
+        }
+    }
+
+    /**
+     * Informa si es posible ocupar la habitación durante 'dias' días a partir de 'desde',
+     * consultando su estado actual y las reservas ACTIVA de ese período.
+     */
+    public boolean puedeOcupar(long habitacionId, LocalDate desde, int dias) {
+        validarPeriodo(desde, dias);
+
+        try {
+            return motivoNoDisponible(obtenerExistente(habitacionId), desde, dias, 0) == null;
+        } catch (SQLException e) {
+            throw ValidacionesServicio.errorDeBase("consultar la disponibilidad", e);
+        }
+    }
+
+    /** Lista las habitaciones activas que se pueden ocupar durante 'dias' días a partir de 'desde'. */
+    public List<Habitacion> listarDisponiblesEnPeriodo(LocalDate desde, int dias) {
+        validarPeriodo(desde, dias);
+        List<Habitacion> list = new ArrayList<>();
+
+        try {
+            for (Habitacion habitacion : habitacionDao.listarActivos()) {
+                if (motivoNoDisponible(habitacion, desde, dias, 0) == null) {
+                    list.add(habitacion);
+                }
+            }
+        } catch (SQLException e) {
+            throw ValidacionesServicio.errorDeBase("listar las habitaciones disponibles", e);
+        }
+
+        return list;
+    }
+
+    /**
+     * Verifica que la habitación se pueda ocupar en el período, o lanza HabitacionNoDisponible con el motivo.
+     * La usa ReservaServicio al crear o modificar una reserva (por eso no es pública).
+     *
+     * @param reservaIdExcluida reserva que se está modificando (para que no choque consigo misma); 0 si es nueva
+     */
+    void verificarDisponibilidad(Habitacion habitacion, LocalDate desde, int dias, long reservaIdExcluida)
+            throws SQLException {
+        String motivo = motivoNoDisponible(habitacion, desde, dias, reservaIdExcluida);
+        if (motivo != null) {
+            throw new HabitacionNoDisponible(motivo);
         }
     }
 
@@ -231,14 +311,44 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
         }
     }
 
-    /** Indica si la habitación tiene alguna reserva en estado ACTIVA. */
-    private boolean tieneReservasActivas(long habitacionId) throws SQLException {
-        for (Reserva reserva : reservaDao.listarPorHabitacion(habitacionId)) {
-            if (reserva.getEstadoReserva() == EstadoReserva.ACTIVA) {
-                return true;
-            }
+    /** Valida los datos de un período consultado: fecha de inicio desde hoy y al menos 1 día. */
+    private void validarPeriodo(LocalDate desde, int dias) {
+        if (desde == null) {
+            throw new HotelException("Debe indicar la fecha de inicio del período.");
         }
-        return false;
+        if (desde.isBefore(LocalDate.now())) {
+            throw new HotelException("La fecha de inicio no puede ser anterior a hoy.");
+        }
+        if (dias <= 0) {
+            throw new HotelException("El período debe ser de al menos 1 día.");
+        }
+    }
+
+    /**
+     * Devuelve por qué la habitación no se puede ocupar en el período, o null si se puede.
+     * Una habitación bloqueada no se ofrece (el bloqueo no tiene fecha de fin), una OCUPADA no se
+     * ofrece para hoy (el pasajero sigue alojado) y no puede haber otra reserva ACTIVA en esos días.
+     */
+    private String motivoNoDisponible(Habitacion habitacion, LocalDate desde, int dias, long reservaIdExcluida)
+            throws SQLException {
+        if (habitacion == null) {
+            return "La habitación seleccionada no existe.";
+        }
+        if (!habitacion.isActivo()) {
+            return "La habitación " + habitacion.getNumeroHabitacion() + " está dada de baja.";
+        }
+        if (habitacion.getEstadoHabitacion() == EstadoHabitacion.NO_DISPONIBLE) {
+            return "La habitación " + habitacion.getNumeroHabitacion()
+                    + " está bloqueada por " + habitacion.getMotivoBloqueo() + ".";
+        }
+        if (habitacion.getEstadoHabitacion() == EstadoHabitacion.OCUPADA && !desde.isAfter(LocalDate.now())) {
+            return "La habitación " + habitacion.getNumeroHabitacion() + " está ocupada hoy.";
+        }
+        if (reservaDao.existeReservaEnPeriodo(habitacion.getHabitacionId(), desde, desde.plusDays(dias),
+                reservaIdExcluida)) {
+            return "La habitación " + habitacion.getNumeroHabitacion() + " ya está reservada en ese período.";
+        }
+        return null;
     }
 
     /** OCUPADA y RESERVADA son estados que dependen de una reserva. */

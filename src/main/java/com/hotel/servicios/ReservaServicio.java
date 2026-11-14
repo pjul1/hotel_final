@@ -15,6 +15,7 @@ import com.hotel.modelo.enums.EstadoHabitacion;
 import com.hotel.modelo.enums.EstadoReserva;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,9 +24,10 @@ import java.util.List;
  * Implementa las mismas interfaces que ReservaDao (ICrud e IListar; no tiene baja lógica:
  * una reserva se cancela). Sus métodos no lanzan SQLException, sino HotelException o sus subclases.
  *
- * Disponibilidad: la base todavía no guarda la fecha de ingreso de la reserva, así que no se pueden
- * comparar períodos. Por ahora, una habitación con una reserva ACTIVA no se puede volver a reservar
- * hasta que esa reserva termine (check-out) o se cancele.
+ * Período de una reserva: desde diaReservado (día de llegada planificado) durante duracionEstadia días.
+ * Ese período queda reservado aunque el pasajero llegue más tarde: el check-in y el check-out registran
+ * la ocupación real y se hacen dentro del período. Una habitación no puede tener dos reservas ACTIVA
+ * con períodos superpuestos, y pasa a RESERVADA recién cuando empieza el período (no al reservar).
  */
 public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
 
@@ -35,18 +37,22 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
     private final ReservaDao reservaDao = new ReservaDao();
     private final HabitacionDao habitacionDao = new HabitacionDao();
     private final PasajeroDao pasajeroDao = new PasajeroDao();
+    private final HabitacionServicio habitacionServicio = new HabitacionServicio();
 
     /**
-     * Registra una nueva reserva y marca la habitación como RESERVADA.
-     * La reserva siempre se crea ACTIVA y sin check-in ni check-out.
+     * Registra una nueva reserva, siempre que la habitación esté libre en su período.
+     * La reserva se crea ACTIVA y sin check-in ni check-out; si el período empieza hoy,
+     * la habitación pasa a RESERVADA.
      */
     @Override
     public void agregar(Reserva reserva) {
         validarReserva(reserva);
+        verificarFechaNoPasada(reserva.getDiaReservado());
 
         try {
             Habitacion habitacion = habitacionDao.buscarPorId(reserva.getHabitacion().getHabitacionId());
-            verificarHabitacionDisponible(habitacion, 0);
+            habitacionServicio.verificarDisponibilidad(habitacion, reserva.getDiaReservado().toLocalDate(),
+                    reserva.getDuracionEstadia(), 0);
             Pasajero pasajero = obtenerPasajeroActivo(reserva.getPasajero().getUsuarioId());
 
             // Se usan los datos actuales de la base, no los que vinieron de la pantalla
@@ -55,20 +61,19 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
             reserva.setEstadoReserva(EstadoReserva.ACTIVA);
             reserva.setCheckIn(null);
             reserva.setCheckOut(null);
-            if (reserva.getDiaReservado() == null) {
-                reserva.setDiaReservado(LocalDateTime.now());
-            }
 
             reservaDao.agregar(reserva);
-            habitacionDao.actualizarEstado(habitacion.getHabitacionId(), EstadoHabitacion.RESERVADA, null);
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("registrar la reserva", e);
         }
+
+        habitacionServicio.actualizarEstadosPorFecha();
     }
 
     /**
-     * Modifica una reserva ACTIVA que todavía no hizo check-in.
-     * El estado y las fechas no se cambian acá: tienen sus propios métodos (cancelar, checkIn, checkOut).
+     * Modifica una reserva ACTIVA que todavía no hizo check-in. Se pueden cambiar la habitación,
+     * el día de llegada y la duración, siempre que el nuevo período esté libre.
+     * El estado y el check-in/check-out tienen sus propios métodos (cancelar, checkIn, checkOut).
      */
     @Override
     public void modificar(Reserva reserva) {
@@ -78,31 +83,35 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
             Reserva actual = obtenerExistente(reserva.getReservaId());
             verificarPendiente(actual, "modificar");
 
-            Habitacion habitacionAnterior = actual.getHabitacion();
+            // Un día de llegada nuevo no puede ser pasado (si no cambia, puede ser una reserva ya empezada)
+            LocalDate diaNuevo = reserva.getDiaReservado().toLocalDate();
+            boolean cambiaDia = !diaNuevo.equals(actual.getDiaReservado().toLocalDate());
+            if (cambiaDia) {
+                verificarFechaNoPasada(reserva.getDiaReservado());
+            }
+
             Habitacion habitacionNueva = habitacionDao.buscarPorId(reserva.getHabitacion().getHabitacionId());
-            boolean cambiaHabitacion = habitacionAnterior.getHabitacionId() != reserva.getHabitacion().getHabitacionId();
-            if (cambiaHabitacion) {
-                verificarHabitacionDisponible(habitacionNueva, reserva.getReservaId());
+            boolean cambiaHabitacion = actual.getHabitacion().getHabitacionId() != reserva.getHabitacion().getHabitacionId();
+            boolean cambiaDuracion = actual.getDuracionEstadia() != reserva.getDuracionEstadia();
+            if (cambiaHabitacion || cambiaDia || cambiaDuracion) {
+                habitacionServicio.verificarDisponibilidad(habitacionNueva, diaNuevo,
+                        reserva.getDuracionEstadia(), reserva.getReservaId());
             }
             Pasajero pasajero = obtenerPasajeroActivo(reserva.getPasajero().getUsuarioId());
 
             reserva.setHabitacion(habitacionNueva);
             reserva.setPasajero(pasajero);
             reserva.setEstadoReserva(actual.getEstadoReserva());
-            reserva.setDiaReservado(actual.getDiaReservado());
             reserva.setCheckIn(null);
             reserva.setCheckOut(null);
 
             reservaDao.modificar(reserva);
-
-            // Si cambió de habitación, se libera la anterior y se reserva la nueva
-            if (cambiaHabitacion) {
-                liberarSiEstaReservada(habitacionAnterior);
-                habitacionDao.actualizarEstado(habitacionNueva.getHabitacionId(), EstadoHabitacion.RESERVADA, null);
-            }
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("modificar la reserva", e);
         }
+
+        // Si cambió la habitación o las fechas, se recalcula qué habitaciones están RESERVADA hoy
+        habitacionServicio.actualizarEstadosPorFecha();
     }
 
     /** Cancela una reserva ACTIVA que todavía no hizo check-in, y libera su habitación. */
@@ -118,11 +127,26 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
         }
     }
 
-    /** Registra la llegada del pasajero (ahora mismo) y marca la habitación como OCUPADA. */
+    /**
+     * Registra la llegada del pasajero (ahora mismo) y marca la habitación como OCUPADA.
+     * Solo se puede hacer dentro del período de la reserva (puede llegar más tarde que el día reservado).
+     */
     public void checkIn(long reservaId) {
         try {
             Reserva reserva = obtenerExistente(reservaId);
             verificarPendiente(reserva, "hacer el check-in de");
+
+            LocalDate hoy = LocalDate.now();
+            LocalDate inicio = reserva.getDiaReservado().toLocalDate();
+            LocalDate fin = inicio.plusDays(reserva.getDuracionEstadia());
+            if (hoy.isBefore(inicio)) {
+                throw new ReservaInvalidaException("El período de la reserva " + reservaId
+                        + " empieza el " + inicio + ": todavía no se puede hacer el check-in.");
+            }
+            if (!hoy.isBefore(fin)) {
+                throw new ReservaInvalidaException("El período de la reserva " + reservaId
+                        + " terminó el " + fin + ": ya no se puede hacer el check-in.");
+            }
 
             Habitacion habitacion = reserva.getHabitacion();
             if (!habitacion.isActivo() || habitacion.getEstadoHabitacion() == EstadoHabitacion.NO_DISPONIBLE) {
@@ -152,6 +176,9 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("registrar el check-out", e);
         }
+
+        // Si otra reserva de la habitación empieza hoy, la habitación pasa de DISPONIBLE a RESERVADA
+        habitacionServicio.actualizarEstadosPorFecha();
     }
 
     /** Devuelve la reserva con ese ID, o null si no existe. */
@@ -227,29 +254,15 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
         if (reserva.getDuracionEstadia() <= 0) {
             throw new ReservaInvalidaException("La duración de la estadía debe ser de al menos 1 día.");
         }
+        if (reserva.getDiaReservado() == null) {
+            throw new ReservaInvalidaException("Debe indicar el día de llegada de la reserva.");
+        }
     }
 
-    /**
-     * Verifica que la habitación exista, esté activa, no esté bloqueada
-     * y no tenga otra reserva ACTIVA (reservaIdActual = 0 si es una reserva nueva).
-     */
-    private void verificarHabitacionDisponible(Habitacion habitacion, long reservaIdActual) throws SQLException {
-        if (habitacion == null) {
-            throw new HabitacionNoDisponible("La habitación seleccionada no existe.");
-        }
-        if (!habitacion.isActivo()) {
-            throw new HabitacionNoDisponible("La habitación " + habitacion.getNumeroHabitacion() + " está dada de baja.");
-        }
-        if (habitacion.getEstadoHabitacion() == EstadoHabitacion.NO_DISPONIBLE) {
-            throw new HabitacionNoDisponible("La habitación " + habitacion.getNumeroHabitacion()
-                    + " está bloqueada por " + habitacion.getMotivoBloqueo() + ".");
-        }
-
-        for (Reserva otra : reservaDao.listarPorHabitacion(habitacion.getHabitacionId())) {
-            if (otra.getEstadoReserva() == EstadoReserva.ACTIVA && otra.getReservaId() != reservaIdActual) {
-                throw new HabitacionNoDisponible("La habitación " + habitacion.getNumeroHabitacion()
-                        + " ya tiene una reserva activa.");
-            }
+    /** Verifica que el día de llegada no sea anterior a hoy. */
+    private void verificarFechaNoPasada(LocalDateTime diaReservado) {
+        if (diaReservado.toLocalDate().isBefore(LocalDate.now())) {
+            throw new ReservaInvalidaException("El día de llegada no puede ser anterior a hoy.");
         }
     }
 
