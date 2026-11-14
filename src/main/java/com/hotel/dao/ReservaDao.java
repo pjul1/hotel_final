@@ -17,6 +17,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -201,6 +202,56 @@ public class ReservaDao implements ICrud<Reserva>, IListar<Reserva> {
             ps.setString(1, estado.name());
             ps.setLong(2, id);
             ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Indica si la habitación tiene otra reserva ACTIVA cuyo período se superpone con [desde, hasta).
+     * El período de una reserva va desde diaReservado hasta diaReservado + duracionEstadia días
+     * (el check-in no cuenta: si el pasajero llega tarde, los días anteriores siguen reservados).
+     * Se compara por día, por eso una reserva puede empezar el mismo día que termina otra.
+     *
+     * @param reservaIdExcluida reserva que no se tiene en cuenta (al modificar, para que no choque consigo
+     *                          misma); 0 si no se excluye ninguna
+     */
+    public boolean existeReservaEnPeriodo(long habitacionId, LocalDate desde, LocalDate hasta,
+                                          long reservaIdExcluida) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM Reserva WHERE habitacion = ? AND estadoReserva = 'ACTIVA' " +
+                "AND reservaId <> ? AND DATE(diaReservado) < ? " +
+                "AND DATE_ADD(DATE(diaReservado), INTERVAL duracionEstadia DAY) > ?";
+
+        try (Connection connection = ConexionDB.getConexion();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setLong(1, habitacionId);
+            ps.setLong(2, reservaIdExcluida);
+            ps.setObject(3, hasta);
+            ps.setObject(4, desde);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
+    /**
+     * Indica si la habitación tiene reservas ACTIVA pendientes al día indicado: con el pasajero
+     * alojado (check-in hecho) o con un período que todavía no terminó.
+     * Una reserva vencida sin check-in (el pasajero nunca llegó) no cuenta.
+     */
+    public boolean tieneReservasPendientes(long habitacionId, LocalDate hoy) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM Reserva WHERE habitacion = ? AND estadoReserva = 'ACTIVA' " +
+                "AND (checkIn IS NOT NULL OR DATE_ADD(DATE(diaReservado), INTERVAL duracionEstadia DAY) > ?)";
+
+        try (Connection connection = ConexionDB.getConexion();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setLong(1, habitacionId);
+            ps.setObject(2, hoy);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
         }
     }
 

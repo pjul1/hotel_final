@@ -15,6 +15,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +25,15 @@ public class HabitacionDao implements ICrud<Habitacion>, IBajaLogica, IListar<Ha
     /** Consulta base que comparten todos los métodos de búsqueda y listado. */
     private static final String SQL_SELECT = "SELECT habitacionId, numeroHabitacion, tipoHabitacion, " +
             "estadoHabitacion, motivoBloqueo, activo FROM Habitacion";
+
+    /**
+     * Subconsulta: reservas de la habitación 'h' que están en curso en un día dado (se carga dos veces):
+     * ACTIVA, sin check-in, y el día cae entre diaReservado y diaReservado + duracionEstadia.
+     */
+    private static final String SQL_RESERVA_EN_CURSO = "SELECT 1 FROM Reserva AS r " +
+            "WHERE r.habitacion = h.habitacionId AND r.estadoReserva = 'ACTIVA' AND r.checkIn IS NULL " +
+            "AND DATE(r.diaReservado) <= ? " +
+            "AND DATE_ADD(DATE(r.diaReservado), INTERVAL r.duracionEstadia DAY) > ?";
 
     @Override
     public void agregar(Habitacion habitacion) throws SQLException {
@@ -175,6 +185,41 @@ public class HabitacionDao implements ICrud<Habitacion>, IBajaLogica, IListar<Ha
             ps.setString(1, estado.name());
             setMotivoBloqueo(ps, 2, motivo);
             ps.setLong(3, id);
+            ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Pasa a RESERVADA las habitaciones DISPONIBLE que tienen, en el día indicado, una reserva
+     * en curso: ACTIVA, sin check-in y con un período que incluye ese día.
+     * No toca las OCUPADA ni las NO_DISPONIBLE (bloqueadas por limpieza, reparación, etc.).
+     */
+    public void marcarReservadasPorFecha(LocalDate hoy) throws SQLException {
+        String sql = "UPDATE Habitacion AS h SET h.estadoHabitacion = 'RESERVADA', h.motivoBloqueo = NULL " +
+                "WHERE h.activo = true AND h.estadoHabitacion = 'DISPONIBLE' AND EXISTS (" + SQL_RESERVA_EN_CURSO + ")";
+
+        try (Connection connection = ConexionDB.getConexion();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setObject(1, hoy);
+            ps.setObject(2, hoy);
+            ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Devuelve a DISPONIBLE las habitaciones RESERVADA que, en el día indicado, ya no tienen una
+     * reserva en curso (porque todavía no empezó, porque venció sin check-in o porque se canceló).
+     */
+    public void liberarReservadasSinReservaVigente(LocalDate hoy) throws SQLException {
+        String sql = "UPDATE Habitacion AS h SET h.estadoHabitacion = 'DISPONIBLE', h.motivoBloqueo = NULL " +
+                "WHERE h.estadoHabitacion = 'RESERVADA' AND NOT EXISTS (" + SQL_RESERVA_EN_CURSO + ")";
+
+        try (Connection connection = ConexionDB.getConexion();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setObject(1, hoy);
+            ps.setObject(2, hoy);
             ps.executeUpdate();
         }
     }
