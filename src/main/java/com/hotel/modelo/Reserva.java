@@ -39,7 +39,6 @@ public final class Reserva {
 
     public Reserva(){
         this.estadoReserva = EstadoReserva.ACTIVA; // Valor predeterminado.
-        this.diaReservado = LocalDateTime.now(); // El dia que se crea la reserva (ahora mismo)
         this.checkIn = null; // No existe check in aun.
         this.checkOut = null; // No existe check out aun.
     }
@@ -57,10 +56,10 @@ public final class Reserva {
         this.habitacion = habitacion;
         this.pasajero = pasajero;
     }
-    public Reserva(double precio, int cantidadPasajeros, int duracionEstadia,
+    public Reserva(double precio, int cantidadPasajeros, int duracionEstadia, LocalDateTime diaReservado,
                    Habitacion habitacion, Pasajero pasajero){
         this.estadoReserva = EstadoReserva.ACTIVA; // Valor predeterminado.
-        this.diaReservado = LocalDateTime.now();
+        this.diaReservado = diaReservado;
         this.checkIn = null; // No existe check in aun.
         this.checkOut = null; // No existe check out aun.
         this.precio = precio;
