@@ -2,11 +2,12 @@ package com.hotel.vistas;
 
 import com.hotel.Main;
 import com.hotel.dao.ConserjeDao;
+import com.hotel.dao.HabitacionDao;
 import com.hotel.modelo.Administrador;
 import com.hotel.modelo.Conserje;
+import com.hotel.modelo.Habitacion;
 import com.hotel.modelo.Usuario;
-import com.hotel.modelo.enums.TipoUsuario;
-import com.hotel.modelo.enums.Turno;
+import com.hotel.modelo.enums.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -26,37 +27,49 @@ import java.util.Locale;
 public class AdministradorVentana {
 
     /** TAB DE GESTION DE USUARIOS Y ROLES */
-    @FXML ComboBox<TipoUsuario> cmbTipoUsuario;
-    @FXML ComboBox<Turno> cmbTurno;
-    @FXML TextField txtNombre;
-    @FXML TextField txtApellido;
-    @FXML TextField txtDni;
-    @FXML TextField txtTelefono;
-    @FXML TextField txtEmail;
-    @FXML TextField txtNombreUsuario;
-    @FXML PasswordField txtContrasenia;
-    @FXML TextField txtSalario;
-    @FXML TextField txtBuscarUsuario;
-    @FXML CheckBox chkActivo; ///Comprobar con un booleano chkActivo.isSelected()
-    @FXML TableColumn<Usuario, Long> colUsuarioId;
-    @FXML TableColumn<Usuario, String> colNombre;
-    @FXML TableColumn<Usuario, String> colApellido;
-    @FXML TableColumn<Usuario, String> colDni;
-    @FXML TableColumn<Usuario, String> colEmail;
-    @FXML TableColumn<Usuario, TipoUsuario> colRol;
-    @FXML TableColumn<Usuario, Boolean> colActivo;
-    @FXML TableView<Usuario> tablaUsuarios;
+    @FXML private ComboBox<TipoUsuario> cmbTipoUsuario;
+    @FXML private ComboBox<Turno> cmbTurno;
+    @FXML private TextField txtNombre;
+    @FXML private TextField txtApellido;
+    @FXML private TextField txtDni;
+    @FXML private TextField txtTelefono;
+    @FXML private TextField txtEmail;
+    @FXML private TextField txtNombreUsuario;
+    @FXML private PasswordField txtContrasenia;
+    @FXML private TextField txtSalario;
+    @FXML private TextField txtBuscarUsuario;
+    @FXML private CheckBox chkActivo; ///Comprobar con un booleano chkActivo.isSelected()
+    @FXML private TableColumn<Usuario, Long> colUsuarioId;
+    @FXML private TableColumn<Usuario, String> colNombre;
+    @FXML private TableColumn<Usuario, String> colApellido;
+    @FXML private TableColumn<Usuario, String> colDni;
+    @FXML private TableColumn<Usuario, String> colEmail;
+    @FXML private TableColumn<Usuario, TipoUsuario> colRol;
+    @FXML private TableColumn<Usuario, Boolean> colActivo;
+    @FXML private TableView<Usuario> tablaUsuarios;
     private Usuario usuarioSeleccionado; // Sirve para guardar el usuario que se clickea
     private ObservableList<Usuario> listaUsuarios = FXCollections.observableArrayList();
-    private ConserjeDao conserjeDao = new ConserjeDao();
+    private ConserjeDao conserjeDao = new ConserjeDao(); ///SOLO PARA PRUEBAS
 
     /** TAB DE CONFIGURACION DE HABITACIONES */
-
-
+    @FXML private TextField txtNumeroHabitacion;
+    @FXML private ComboBox<TipoHabitacion> cmbTipoHabitacion;
+    @FXML private ComboBox<EstadoHabitacion> cmbEstadoHabitacion;
+    @FXML private ComboBox<MotivoBloqueo> cmbMotivoBloqueo;
+    @FXML private TableColumn<Habitacion, Long> colHabId;
+    @FXML private TableColumn<Habitacion, Integer> colNumHab;
+    @FXML private TableColumn<Habitacion, TipoHabitacion> colTipoHab;
+    @FXML private TableColumn<Habitacion, EstadoHabitacion> colEstadoHab;
+    @FXML private TableColumn<Habitacion, MotivoBloqueo> colMotivoBloqueo;
+    @FXML private TableColumn<Habitacion, Boolean> colHabActiva;
+    @FXML private TableView<Habitacion> tablaHabitaciones;
+    private ObservableList<Habitacion> listaHabitaciones = FXCollections.observableArrayList();
+    private Habitacion habitacionSeleccionada;
+    private HabitacionDao habitacionDao = new HabitacionDao();  ///SOLO PARA PRUEBAS
 
     @FXML
     public void initialize() throws SQLException {
-        // Configuramos las columnas para que lean las properties de la clase Producto
+        // Configuramos las columnas para que lean las properties de la clase Usuario
         colUsuarioId.setCellValueFactory(new PropertyValueFactory<>("usuarioId"));
         colNombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
         colApellido.setCellValueFactory(new PropertyValueFactory<>("apellido"));
@@ -64,13 +77,25 @@ public class AdministradorVentana {
         colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
         colRol.setCellValueFactory(new PropertyValueFactory<>("tipoUsuario"));
         colActivo.setCellValueFactory(new PropertyValueFactory<>("activo"));
+        // Configuramos las columnas para que lean las properties de la clase Habitacion
+        colHabId.setCellValueFactory(new PropertyValueFactory<>("habitacionId"));
+        colNumHab.setCellValueFactory(new PropertyValueFactory<>("numeroHabitacion"));
+        colTipoHab.setCellValueFactory(new PropertyValueFactory<>("tipoHabitacion"));
+        colEstadoHab.setCellValueFactory(new PropertyValueFactory<>("estadoHabitaion"));
+        colMotivoBloqueo.setCellValueFactory(new PropertyValueFactory<>("motivoBloqueo"));
+        colHabActiva.setCellValueFactory(new PropertyValueFactory<>("activo"));
 
         // Vinculamos la lista a la tabla
         listaUsuarios.addAll(conserjeDao.listar()); ///SOLO PARA PRUEBAS DESPUES SE DEBE USAR EL SERVICE
+        listaHabitaciones.addAll(habitacionDao.listar());
         tablaUsuarios.setItems(listaUsuarios);
+        tablaHabitaciones.setItems(listaHabitaciones);
 
         cmbTipoUsuario.getItems().addAll(TipoUsuario.CONSERJE, TipoUsuario.PASAJERO);
-        cmbTurno.getItems().addAll(Turno.MANIANA, Turno.TARDE, Turno.NOCHE);
+        cmbTurno.getItems().addAll(Turno.values());
+        cmbTipoHabitacion.getItems().addAll(TipoHabitacion.values());
+        cmbEstadoHabitacion.getItems().addAll(EstadoHabitacion.values());
+        cmbMotivoBloqueo.getItems().addAll(MotivoBloqueo.values());
     }
 
     @FXML
@@ -118,7 +143,7 @@ public class AdministradorVentana {
     }
 
     @FXML
-    public void completarConClick(){
+    public void completarConClickUsuario(){
         usuarioSeleccionado = tablaUsuarios.getSelectionModel().getSelectedItem();
 
         if(usuarioSeleccionado != null){
@@ -152,10 +177,22 @@ public class AdministradorVentana {
         }
     }
 
-    /** Limpia los campos para ingresar texto */
+    @FXML
+    public void completarConClickHabitacion(){
+        habitacionSeleccionada = tablaHabitaciones.getSelectionModel().getSelectedItem();
+
+        if(habitacionSeleccionada != null){
+            txtNumeroHabitacion.setText(String.valueOf(habitacionSeleccionada.getNumeroHabitacion()));
+            cmbTipoHabitacion.setValue(habitacionSeleccionada.getTipoHabitacion());
+            cmbEstadoHabitacion.setValue(habitacionSeleccionada.getEstadoHabitacion());
+            cmbMotivoBloqueo.setValue(habitacionSeleccionada.getMotivoBloqueo());
+        }
+    }
+
+    /** Limpia los campos para ingresar texto, uno para cada tab */
 
     @FXML
-    public void limpiar(){
+    public void limpiarUsuario(){
         txtNombre.clear();
         txtApellido.clear();
         txtDni.clear();
@@ -164,6 +201,14 @@ public class AdministradorVentana {
         txtNombreUsuario.clear();
         txtContrasenia.clear();
         txtSalario.clear();
+    }
+
+    @FXML
+    public void limpiarHabitacion(){
+        txtNumeroHabitacion.clear();
+        cmbTipoHabitacion.setValue(null);
+        cmbEstadoHabitacion.setValue(null);
+        cmbMotivoBloqueo.setValue(null);
     }
 
     /** Permite buscar en la tabla en tiempo real */
