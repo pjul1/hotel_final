@@ -1,5 +1,5 @@
 -- BACKUP DEL SISTEMA HOTELERO
--- Fecha: 2026-11-14T16:38:19.085234206
+-- Fecha: 2026-11-14T17:00:13.920423700
 
 -- TABLA USUARIO
 INSERT INTO Usuario (usuarioId, nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, activo, tipoUsuario) VALUES (2, 'Mariana', 'López', 'mariana.lopez@email.com', '31222333', '2234222222', 'mlopez', 'conserje123', true, 'CONSERJE');
