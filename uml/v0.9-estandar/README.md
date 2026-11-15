@@ -1,6 +1,6 @@
 # UML V0.9 estándar (propuesta para revisar)
 
-Diagrama de clases actualizado según el código de `main` (commit `ab3c775`).
+Diagrama de clases actualizado según el código de `main` (commit `9511f3b`, PR #20 y #21).
 Se sube en una carpeta aparte para que el equipo lo revise. **No reemplaza** a `uml/UML-hotel.html`: si lo aprobamos, se puede reemplazar después.
 
 ## Archivos
@@ -19,7 +19,15 @@ Se sube en una carpeta aparte para que el equipo lo revise. **No reemplaza** a `
 - Marca las clases `final` («final») y los atributos `final` ({readOnly}).
 - Cada enum es una caja «enumeration» dentro del subpaquete `com.hotel.modelo.enums`, con una asociación desde la clase que lo usa.
 - No dibuja `RuntimeException` (clase de Java).
-- 37 elementos, 9 paquetes y 67 conexiones, sin cruces entre líneas.
+- 38 elementos, 9 paquetes y 69 conexiones, sin cruces entre líneas.
+
+## Actualización con los cambios de `main` (PR #20 y #21)
+
+- Los 5 servicios son Singleton: atributo `-instancia {static}`, constructor privado y `+getInstancia() {static}`.
+- `AdministradorVentana`: métodos nuevos (`guardarUsuario`, `modificarUsuario`, `guardarHabitacion`, `actualizarHabitacion`, `buscarUsuario`, `cargarTablaUsuarios`, `cargarTablaHabitaciones`); sale `listaUsuarios` y `buscar()`.
+- Clase nueva `PasajeroVentana` (todavía vacía).
+- Conexiones nuevas entre paquetes: `vistas → servicios` y `vistas → excepciones` (la ventana del administrador usa los servicios y captura `HotelException`).
+- Los dos PDF todavía describen la versión anterior (sin estos cambios).
 
 ## Para revisar
 
