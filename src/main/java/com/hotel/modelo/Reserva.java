@@ -176,4 +176,11 @@ public final class Reserva {
     public void setPasajero(Pasajero pasajero) {
         this.pasajero = pasajero;
     }
+
+    public int getNumeroHabitacion() {
+        if (this.habitacion != null) {
+            return this.habitacion.getNumeroHabitacion();
+        }
+        return 0;
+    }
 }

@@ -52,7 +52,6 @@ public class AdministradorVentana {
     @FXML private Text txtErrorAlGuardar;
     @FXML private Text txtMensajeHabitacion;
     private Usuario usuarioSeleccionado; // Sirve para guardar el usuario que se clickea
-    private ConserjeDao conserjeDao = new ConserjeDao(); ///SOLO PARA PRUEBAS
 
     /** TAB DE CONFIGURACION DE HABITACIONES */
     @FXML private TextField txtNumeroHabitacion;
@@ -67,9 +66,7 @@ public class AdministradorVentana {
     @FXML private TableColumn<Habitacion, Boolean> colHabActiva;
     @FXML private TableView<Habitacion> tablaHabitaciones;
     @FXML private CheckBox chkHabitacionActiva;
-    private ObservableList<Habitacion> listaHabitaciones = FXCollections.observableArrayList();
     private Habitacion habitacionSeleccionada;
-    private HabitacionDao habitacionDao = new HabitacionDao();  ///SOLO PARA PRUEBAS
 
     @FXML
     public void initialize(){

@@ -1,5 +1,12 @@
 package com.hotel.vistas;
 
+import com.hotel.modelo.Administrador;
+import com.hotel.modelo.Conserje;
+import com.hotel.modelo.Pasajero;
+import com.hotel.modelo.Usuario;
+import com.hotel.servicios.AdministradorServicio;
+import com.hotel.servicios.ConserjeServicio;
+import com.hotel.servicios.PasajeroServicio;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -24,61 +31,86 @@ public class LoginVentana {
     @FXML private Text datosIncorrectos;
 
     @FXML
-    void iniciarSesion(ActionEvent event){
-        String user = txtUser.getText();
-        String password = txtPassword.getText();
+    void iniciarSesion(ActionEvent event) {
+        String user = txtUser.getText().trim();
+        String password = txtPassword.getText().trim();
 
-        String sql = "SELECT nombreUsuario, contrasenia, tipoUsuario FROM Usuario WHERE nombreUsuario = ? AND contrasenia = ?";
+        if (user.isEmpty() || password.isEmpty()) {
+            datosIncorrectos.setText("Complete usuario y contraseña.");
+            return;
+        }
 
-        try (Connection conn = ConexionDB.getConexion();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        Usuario usuarioLogueado = null;
 
-            stmt.setString(1, user);
-            stmt.setString(2, password);
+        Administrador admin = AdministradorServicio.getInstancia().obtenerAdministrador();
+        if (admin != null && admin.getNombreUsuario().equals(user) && admin.getContrasenia().equals(password)) {
+            usuarioLogueado = admin;
+        }
 
-            try (ResultSet rs = stmt.executeQuery()) {
-
-                if (rs.next()) {
-                    String rol = rs.getString("tipoUsuario");
-                    String fxmlFile = "";
-                    String windowTitle = "Sistema de administración";
-
-                    switch (rol.toLowerCase()) {
-                        case "administrador":
-                            fxmlFile = "/views/dashboard/main-screen-admin.fxml";
-                            break;
-                        case "conserje":
-                            fxmlFile = "/views/dashboard/main-screen-conserje.fxml";
-                            break;
-                        case "pasajero":
-                            fxmlFile = "/views/dashboard/main-screen-pasajero.fxml";
-                            windowTitle = "Sistema de reserva y pedidos";
-                            break;
-                        default:
-                            datosIncorrectos.setText("Rol no asignado al sistema.");
-                            return;
-                    }
-
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
-                    Parent root = loader.load();
-
-                    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-                    Scene scene = new Scene(root);
-
-                    stage.setScene(scene);
-                    stage.setTitle(windowTitle);
-                    stage.centerOnScreen();
-                    stage.show();
-
-                } else {
-                    datosIncorrectos.setText("Usuario o contraseña incorrectos");
+        if (usuarioLogueado == null) {
+            for (Conserje c : ConserjeServicio.getInstancia().listar()) {
+                if (c.getNombreUsuario().equals(user) && c.getContrasenia().equals(password)) {
+                    usuarioLogueado = c;
+                    break;
                 }
             }
-        } catch (SQLException | IOException e) {
+        }
+
+        if (usuarioLogueado == null) {
+            for (Pasajero p : PasajeroServicio.getInstancia().listar()) {
+                if (p.getNombreUsuario().equals(user) && p.getContrasenia().equals(password)) {
+                    usuarioLogueado = p;
+                    break;
+                }
+            }
+        }
+
+        if (usuarioLogueado == null) {
+            datosIncorrectos.setText("Usuario o contraseña incorrectos");
+            return;
+        }
+
+        if (!usuarioLogueado.isActivo()) {
+            datosIncorrectos.setText("Su cuenta se encuentra desactivada. Contacte al administrador.");
+            return;
+        }
+
+        try {
+            String fxmlFile = "";
+            String windowTitle = "Sistema de administración";
+
+            if (usuarioLogueado instanceof Administrador) {
+                fxmlFile = "/views/dashboard/main-screen-admin.fxml";
+            } else if (usuarioLogueado instanceof Conserje) {
+                fxmlFile = "/views/dashboard/main-screen-conserje.fxml";
+                windowTitle = "Recepción y Conserjería";
+            } else if (usuarioLogueado instanceof Pasajero) {
+                fxmlFile = "/views/dashboard/main-screen-pasajero.fxml";
+                windowTitle = "Sistema de reserva y pedidos";
+            }
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
+            Parent root = loader.load();
+
+            if (usuarioLogueado instanceof Pasajero) {
+                PasajeroVentana controladorPasajero = loader.getController();
+                controladorPasajero.setPasajeroLogueado((Pasajero) usuarioLogueado);
+            }
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            Scene scene = new Scene(root);
+
+            stage.setScene(scene);
+            stage.setTitle(windowTitle);
+            stage.centerOnScreen();
+            stage.show();
+
+        } catch (IOException e) {
             e.printStackTrace();
-            datosIncorrectos.setText("Error de conexión con el sistema.");
+            datosIncorrectos.setText("Error al cargar la pantalla del sistema.");
         }
     }
+
 
     @FXML
     void nuevoUsuario(ActionEvent event){
