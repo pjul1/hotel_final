@@ -1,28 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.DatePicker?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<BorderPane prefHeight="720.0" prefWidth="1180.0" stylesheets="@dashboard.css" xmlns="http://javafx.com/javafx/25.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane prefHeight="720.0" prefWidth="1180.0" stylesheets="@dashboard.css" xmlns="http://javafx.com" xmlns:fx="http://javafx.com" fx:controller="com.hotel.vistas.ConserjeVentana">
    <top>
       <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: #0b0f19; -fx-padding: 15 25;">
          <Label style="-fx-text-fill: #f1f5f9; -fx-font-size: 18px; -fx-font-weight: bold;" text="Recepción y Conserjería" />
          <Region HBox.hgrow="ALWAYS" />
          <Label fx:id="lblNombreConserje" style="-fx-text-fill: #94a3b8;" text="Conserje: Turno Activo" />
-         <Button fx:id="btnCerrarSesion" style="-fx-background-color: #ef4444;" text="Cerrar Sesión" />
+         <Button fx:id="btnCerrarSesion" onAction="#cerrarSesion" style="-fx-background-color: #ef4444;" text="Cerrar Sesión" />
       </HBox>
    </top>
    <center>
@@ -35,18 +23,18 @@
                      <Label style="-fx-text-fill: #f1f5f9; -fx-font-size: 15px; -fx-font-weight: bold;" text="Nueva Reserva" />
                      <HBox spacing="8.0">
                         <TextField fx:id="txtDniPasajeroReserva" promptText="DNI Pasajero..." HBox.hgrow="ALWAYS" />
-                        <Button fx:id="btnBuscarPasajero" style="-fx-background-color: #1e293b;" text="Buscar" />
+                        <Button fx:id="btnBuscarPasajero" onAction="#buscarPasajeroPorDni" style="-fx-background-color: #1e293b;" text="Buscar" />
                      </HBox>
                      <Label fx:id="lblPasajeroSeleccionado" style="-fx-text-fill: #6366f1;" text="Pasajero: No seleccionado" />
-                     <DatePicker fx:id="dpFechaIngreso" maxWidth="Infinity" promptText="Fecha de Ingreso *" />
+                     <DatePicker fx:id="dpFechaIngreso" maxWidth="Infinity" onAction="#actualizarHabitacionesDisponiblesReserva" promptText="Fecha de Ingreso *" />
                      <HBox spacing="8.0">
-                        <TextField fx:id="txtDuracionEstadia" promptText="Días *" HBox.hgrow="ALWAYS" />
+                        <TextField fx:id="txtDuracionEstadia" onKeyReleased="#actualizarHabitacionesDisponiblesReserva" promptText="Días *" HBox.hgrow="ALWAYS" />
                         <TextField fx:id="txtCantidadPasajeros" promptText="Pasajeros *" HBox.hgrow="ALWAYS" />
                      </HBox>
-                     <ComboBox fx:id="cmbHabitacionReserva" maxWidth="Infinity" promptText="Habitación Disponible *" />
+                     <ComboBox fx:id="cmbHabitacionReserva" maxWidth="Infinity" onAction="#calcularPrecioSugerido" promptText="Habitación Disponible *" />
                      <TextField fx:id="txtPrecioReserva" promptText="Monto Total *" />
                      <Label fx:id="lblMensajeReserva" style="-fx-text-fill: #ef4444;" wrapText="true" />
-                     <Button fx:id="btnCrearReserva" maxWidth="Infinity" text="Registrar Reserva" />
+                     <Button fx:id="btnCrearReserva" maxWidth="Infinity" onAction="#registrarReserva" text="Registrar Reserva" />
                   </VBox>
                </left>
                <center>
@@ -55,9 +43,9 @@
                      <HBox alignment="CENTER_LEFT" spacing="10.0">
                         <Label style="-fx-text-fill: #f1f5f9; -fx-font-size: 15px; -fx-font-weight: bold;" text="Control de Reservas" />
                         <Region HBox.hgrow="ALWAYS" />
-                        <Button fx:id="btnCheckIn" style="-fx-background-color: #10b981;" text="Check-In" />
-                        <Button fx:id="btnCheckOut" style="-fx-background-color: #f59e0b;" text="Check-Out" />
-                        <Button fx:id="btnCancelarReserva" style="-fx-background-color: #334155;" text="Cancelar" />
+                        <Button fx:id="btnCheckIn" onAction="#registrarCheckIn" style="-fx-background-color: #10b981;" text="Check-In" />
+                        <Button fx:id="btnCheckOut" onAction="#registrarCheckOut" style="-fx-background-color: #f59e0b;" text="Check-Out" />
+                        <Button fx:id="btnCancelarReserva" onAction="#cancelarReserva" style="-fx-background-color: #334155;" text="Cancelar" />
                      </HBox>
                      <TableView fx:id="tablaReservas" VBox.vgrow="ALWAYS">
                         <columns>
@@ -84,12 +72,12 @@
                      <Label style="-fx-text-fill: #f1f5f9; -fx-font-size: 15px; -fx-font-weight: bold;" text="Disponibilidad y Bloqueos" />
                      <DatePicker fx:id="dpConsultaDesde" maxWidth="Infinity" promptText="Fecha Desde *" />
                      <TextField fx:id="txtConsultaDias" promptText="Cantidad de Días *" />
-                     <Button fx:id="btnConsultarDisponibilidad" maxWidth="Infinity" style="-fx-background-color: #1e293b;" text="Verificar Disponibles" />
+                     <Button fx:id="btnConsultarDisponibilidad" maxWidth="Infinity" onAction="#verificarDisponibilidadPorFechas" style="-fx-background-color: #1e293b;" text="Verificar Disponibles" />
                      <Separator style="-fx-opacity: 0.2;" />
                      <ComboBox fx:id="cmbEstadoHabitacion" maxWidth="Infinity" promptText="Nuevo Estado" />
                      <ComboBox fx:id="cmbMotivoBloqueo" maxWidth="Infinity" promptText="Motivo de Bloqueo" />
                      <Label fx:id="lblMensajeHabitacion" style="-fx-text-fill: #ef4444;" wrapText="true" />
-                     <Button fx:id="btnActualizarEstadoHab" maxWidth="Infinity" text="Actualizar Habitación" />
+                     <Button fx:id="btnActualizarEstadoHab" maxWidth="Infinity" onAction="#actualizarEstadoHabitacion" text="Actualizar Habitación" />
                   </VBox>
                </left>
                <center>
@@ -98,9 +86,9 @@
                      <HBox alignment="CENTER_LEFT" spacing="10.0">
                         <Label style="-fx-text-fill: #f1f5f9; -fx-font-size: 15px; -fx-font-weight: bold;" text="Mapa de Habitaciones" />
                         <Region HBox.hgrow="ALWAYS" />
-                        <ComboBox fx:id="cmbFiltroEstadoHab" promptText="Filtrar estado..." />
+                        <ComboBox fx:id="cmbFiltroEstadoHab" onAction="#filtrarMapaHabitaciones" promptText="Filtrar estado..." />
                      </HBox>
-                     <TableView fx:id="tablaHabitaciones" VBox.vgrow="ALWAYS">
+                     <TableView fx:id="tablaHabitaciones" onMouseClicked="#seleccionarHabitacionTabla" VBox.vgrow="ALWAYS">
                         <columns>
                            <TableColumn fx:id="colHabNumero" text="N° Hab." />
                            <TableColumn fx:id="colHabTipo" text="Tipo" />
@@ -133,7 +121,7 @@
                      <TextField fx:id="txtPasOrigen" promptText="Ciudad / País Origen *" />
                      <TextField fx:id="txtPasDomicilio" promptText="Domicilio Origen *" />
                      <Label fx:id="lblMensajePasajero" style="-fx-text-fill: #ef4444;" wrapText="true" />
-                     <Button fx:id="btnGuardarPasajero" maxWidth="Infinity" text="Guardar Pasajero" />
+                     <Button fx:id="btnGuardarPasajero" maxWidth="Infinity" onAction="#guardarPasajeroRecepcion" text="Guardar Pasajero" />
                   </VBox>
                </left>
                <center>
@@ -142,8 +130,8 @@
                      <HBox alignment="CENTER_LEFT" spacing="10.0">
                         <Label style="-fx-text-fill: #f1f5f9; -fx-font-size: 15px; -fx-font-weight: bold;" text="Informe de Pasajeros" />
                         <Region HBox.hgrow="ALWAYS" />
-                        <TextField fx:id="txtBuscarPasajeroInforme" prefWidth="200.0" promptText="Buscar nombre o DNI..." />
-                        <Button fx:id="btnVerHistorialPasajero" style="-fx-background-color: #1e293b;" text="Ver Historial" />
+                        <TextField fx:id="txtBuscarPasajeroInforme" onKeyReleased="#filtrarPasajerosInforme" prefWidth="200.0" promptText="Buscar nombre o DNI..." />
+                        <Button fx:id="btnVerHistorialPasajero" onAction="#verHistorialPasajero" style="-fx-background-color: #1e293b;" text="Ver Historial" />
                      </HBox>
                      <TableView fx:id="tablaPasajeros" VBox.vgrow="ALWAYS">
                         <columns>

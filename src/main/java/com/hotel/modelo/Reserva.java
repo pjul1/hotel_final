@@ -183,4 +183,12 @@ public final class Reserva {
         }
         return 0;
     }
+
+    public String getNombreCompletoPasajero() {
+        if (this.pasajero != null) {
+            return this.pasajero.getNombre() + " " + this.pasajero.getApellido();
+        }
+        return "Sin asignar";
+    }
+
 }

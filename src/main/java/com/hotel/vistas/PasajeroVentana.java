@@ -38,7 +38,7 @@ public class PasajeroVentana {
     @FXML private TableColumn<Reserva, Integer> colDias;
     @FXML private TableColumn<Reserva, Integer> colPasajeros;
     @FXML private TableColumn<Reserva, Double> colPrecio;
-    @FXML private TableColumn<Reserva, Boolean> colEstadoReserva;
+    @FXML private TableColumn<Reserva, EstadoReserva> colEstadoReserva;
     @FXML private TableView<Reserva> tablaReservas;
     @FXML private Label lblPrecioTotal;
     @FXML private Label lblMensajeReserva;
@@ -65,20 +65,17 @@ public class PasajeroVentana {
     }
 
     private void cargarTablaReservas() {
-        List<Reserva> todas = ReservaServicio.getInstancia().listar();
-
         if (pasajeroLogueado != null) {
-            List<Reserva> misReservas = new ArrayList<>();
-            for (Reserva r : todas) {
-                if (r.getPasajero() != null && r.getPasajero().getUsuarioId() == pasajeroLogueado.getUsuarioId()) {
-                    misReservas.add(r);
-                }
-            }
-            tablaReservas.setItems(FXCollections.observableArrayList(misReservas));
+            tablaReservas.setItems(FXCollections.observableArrayList(
+                    ReservaServicio.getInstancia().listarPorPasajero(pasajeroLogueado.getUsuarioId())
+            ));
         } else {
-            tablaReservas.setItems(FXCollections.observableArrayList(todas));
+            tablaReservas.setItems(FXCollections.observableArrayList(
+                    ReservaServicio.getInstancia().listar()
+            ));
         }
     }
+
 
     @FXML
     public void actualizarDisponibilidadYPrecio() {
