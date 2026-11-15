@@ -13,12 +13,20 @@ import java.sql.SQLException;
  */
 public class AdministradorServicio {
 
+    private static AdministradorServicio instancia;
     private final AdministradorDao administradorDao = new AdministradorDao();
     private Administrador administradorEnMemoria;
 
     /** Carga el administrador desde la base de datos al iniciar el servicio. */
-    public AdministradorServicio() {
+    private AdministradorServicio() {
         cargarDesdeBase();
+    }
+
+    public static AdministradorServicio getInstancia() {
+        if (instancia == null) {
+            instancia = new AdministradorServicio();
+        }
+        return instancia;
     }
 
     /** Devuelve el administrador único del sistema (lo trae de memoria si ya está cargado). */

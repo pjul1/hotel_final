@@ -23,14 +23,23 @@ import java.util.Map;
  */
 public class PasajeroServicio implements ICrud<Pasajero>, IBajaLogica, IListar<Pasajero>, IListarPorEstado<Pasajero> {
 
+    private static PasajeroServicio instancia;
+
     private final PasajeroDao pasajeroDao = new PasajeroDao();
 
     /** Colección en memoria indexada por usuarioId (garantiza unicidad y búsqueda O(1)). */
     private final Map<Long, Pasajero> pasajerosPorId = new LinkedHashMap<>();
 
     /** Carga inicial de los pasajeros desde MySQL hacia la colección en memoria. */
-    public PasajeroServicio() {
+    private PasajeroServicio() {
         cargarDesdeBase();
+    }
+
+    public static PasajeroServicio getInstancia() {
+        if (instancia == null) {
+            instancia = new PasajeroServicio();
+        }
+        return instancia;
     }
 
     /**

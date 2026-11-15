@@ -22,14 +22,23 @@ import java.util.List;
  */
 public class ConserjeServicio implements ICrud<Conserje>, IBajaLogica, IListar<Conserje>, IListarPorEstado<Conserje> {
 
+    private static ConserjeServicio instancia;
+
     private final ConserjeDao conserjeDao = new ConserjeDao();
 
     /** Colección en memoria que conserva el orden de los conserjes cargados. */
     private final List<Conserje> conserjes = new ArrayList<>();
 
     /** Carga inicial de los conserjes desde MySQL hacia la lista en memoria. */
-    public ConserjeServicio() {
+    private ConserjeServicio() {
         cargarDesdeBase();
+    }
+
+    public static ConserjeServicio getInstancia() {
+        if (instancia == null) {
+            instancia = new ConserjeServicio();
+        }
+        return instancia;
     }
 
     /**
