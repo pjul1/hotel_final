@@ -1,8 +1,10 @@
 package com.hotel.modelo;
 
 import com.hotel.modelo.enums.EstadoHabitacion;
+import com.hotel.modelo.enums.EstadoReserva;
 import com.hotel.modelo.enums.MotivoBloqueo;
 import com.hotel.modelo.enums.TipoHabitacion;
+import com.hotel.servicios.ReservaServicio;
 
 /** Representa cada habitación dentro del hotel */
 public final class Habitacion {
@@ -131,5 +133,39 @@ public final class Habitacion {
 
     public void setActivo(boolean activo) {
         this.activo = activo;
+    }
+
+    public String getOcupanteActual() {
+        if (this.estadoHabitacion == EstadoHabitacion.OCUPADA) {
+            for (Reserva r : ReservaServicio.getInstancia().listar()) {
+                if (r.getHabitacion() != null &&
+                        r.getHabitacion().getHabitacionId() == this.habitacionId &&
+                        r.getEstadoReserva() == EstadoReserva.ACTIVA &&
+                        r.getCheckIn() != null) {
+
+                    if (r.getPasajero() != null) {
+                        return r.getPasajero().getNombre() + " " + r.getPasajero().getApellido();
+                    }
+                }
+            }
+        }
+        return "-";
+    }
+
+    public String getDniOcupanteActual() {
+        if (this.estadoHabitacion == EstadoHabitacion.OCUPADA) {
+            for (Reserva r : ReservaServicio.getInstancia().listar()) {
+                if (r.getHabitacion() != null &&
+                        r.getHabitacion().getHabitacionId() == this.habitacionId &&
+                        r.getEstadoReserva() == EstadoReserva.ACTIVA &&
+                        r.getCheckIn() != null) {
+
+                    if (r.getPasajero() != null) {
+                        return r.getPasajero().getDni();
+                    }
+                }
+            }
+        }
+        return "-";
     }
 }
