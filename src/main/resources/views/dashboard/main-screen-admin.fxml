@@ -71,11 +71,11 @@
                      <CheckBox fx:id="chkActivo" selected="true" style="-fx-text-fill: #f1f5f9;" text="Usuario Activo" />
                      <Label fx:id="lblMensajeUsuario" style="-fx-text-fill: #ef4444;" />
                      <HBox spacing="8.0">
-                        <Button maxWidth="Infinity" onAction="#guardar" style="-fx-background-color: #6366f1; -fx-text-fill: white;" text="Guardar" HBox.hgrow="ALWAYS" />
-                        <Button maxWidth="Infinity" style="-fx-background-color: #1e293b; -fx-text-fill: white;" text="Modificar" HBox.hgrow="ALWAYS" />
+                        <Button maxWidth="Infinity" onAction="#guardarUsuario" style="-fx-background-color: #6366f1; -fx-text-fill: white;" text="Guardar" HBox.hgrow="ALWAYS" />
+                        <Button maxWidth="Infinity" onAction="#modificarUsuario" style="-fx-background-color: #1e293b; -fx-text-fill: white;" text="Modificar" HBox.hgrow="ALWAYS" />
                         <Button onAction="#limpiarUsuario" style="-fx-background-color: #334155; -fx-text-fill: white;" text="Limpiar" />
                      </HBox>
-                     <Text fx:id="txtErrorAlGuardar" fill="#f50000" strokeType="OUTSIDE" strokeWidth="0.0" text="Text" textAlignment="CENTER" wrappingWidth="297.939453125">
+                     <Text fx:id="txtErrorAlGuardar" fill="RED" strokeType="OUTSIDE" strokeWidth="0.0" textAlignment="CENTER" wrappingWidth="297.939453125">
                         <font>
                            <Font size="14.0" />
                         </font>
@@ -88,7 +88,7 @@
                      <HBox alignment="CENTER_LEFT" spacing="10.0">
                         <Label style="-fx-text-fill: #f1f5f9; -fx-font-size: 15px; -fx-font-weight: bold;" text="Usuarios Registrados" />
                         <Region HBox.hgrow="ALWAYS" />
-                        <TextField fx:id="txtBuscarUsuario" prefWidth="250.0" promptText="Buscar por DNI, nombre o rol..." />
+                        <TextField fx:id="txtBuscarUsuario" onKeyReleased="#buscarUsuario" prefWidth="250.0" promptText="Buscar por DNI, nombre o rol..." />
                      </HBox>
                      <TableView fx:id="tablaUsuarios" onMouseClicked="#completarConClickUsuario" VBox.vgrow="ALWAYS">
                         <columns>
@@ -117,11 +117,21 @@
                      <ComboBox fx:id="cmbEstadoHabitacion" maxWidth="Infinity" promptText="Estado Actual" />
                      <ComboBox fx:id="cmbMotivoBloqueo" maxWidth="Infinity" promptText="Motivo de Bloqueo" />
                      <Label fx:id="lblMensajeHabitacion" style="-fx-text-fill: #ef4444;" />
+                     <CheckBox fx:id="chkHabitacionActiva" selected="true" style="-fx-text-fill: #f1f5f9;" text="Habitacion activa">
+                        <VBox.margin>
+                           <Insets bottom="5.0" top="-20.0" />
+                        </VBox.margin>
+                     </CheckBox>
                      <HBox spacing="8.0">
-                        <Button maxWidth="Infinity" style="-fx-background-color: #6366f1; -fx-text-fill: white;" text="Guardar" HBox.hgrow="ALWAYS" />
-                        <Button maxWidth="Infinity" style="-fx-background-color: #1e293b; -fx-text-fill: white;" text="Actualizar" HBox.hgrow="ALWAYS" />
+                        <Button maxWidth="Infinity" onAction="#guardarHabitacion" style="-fx-background-color: #6366f1; -fx-text-fill: white;" text="Guardar" HBox.hgrow="ALWAYS" />
+                        <Button maxWidth="Infinity" onAction="#actualizarHabitacion" style="-fx-background-color: #1e293b; -fx-text-fill: white;" text="Actualizar" HBox.hgrow="ALWAYS" />
                         <Button onAction="#limpiarHabitacion" style="-fx-background-color: #334155; -fx-text-fill: white;" text="Limpiar" />
                      </HBox>
+                     <Text fx:id="txtMensajeHabitacion" fill="RED" strokeType="OUTSIDE" strokeWidth="0.0" textAlignment="CENTER" wrappingWidth="302.7294921875">
+                        <font>
+                           <Font size="14.0" />
+                        </font>
+                     </Text>
                   </VBox>
                </left>
                <center>
