@@ -37,6 +37,8 @@ import java.util.Set;
  */
 public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IListar<Habitacion>, IListarPorEstado<Habitacion> {
 
+    private static HabitacionServicio instancia;
+
     private final HabitacionDao habitacionDao = new HabitacionDao();
     private final ReservaDao reservaDao = new ReservaDao();
 
@@ -44,8 +46,15 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
     private final Set<Habitacion> habitaciones = new LinkedHashSet<>();
 
     /** Carga inicial de las habitaciones desde MySQL hacia el Set en memoria. */
-    public HabitacionServicio() {
+    private HabitacionServicio() {
         cargarDesdeBase();
+    }
+
+    public static HabitacionServicio getInstancia() {
+        if (instancia == null) {
+            instancia = new HabitacionServicio();
+        }
+        return instancia;
     }
 
     @Override

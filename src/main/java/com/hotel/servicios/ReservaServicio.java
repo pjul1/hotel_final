@@ -39,17 +39,26 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
     /** Máximo que admite la columna cantidadPasajeros (TINYINT UNSIGNED). */
     private static final int MAXIMO_PASAJEROS = 255;
 
+    private static ReservaServicio instancia;
+
     private final ReservaDao reservaDao = new ReservaDao();
     private final HabitacionDao habitacionDao = new HabitacionDao();
     private final PasajeroDao pasajeroDao = new PasajeroDao();
-    private final HabitacionServicio habitacionServicio = new HabitacionServicio();
+    private final HabitacionServicio habitacionServicio = HabitacionServicio.getInstancia();
 
     /** Colección en memoria que garantiza unicidad de reservas y conserva el orden de carga. */
     private final Set<Reserva> reservas = new LinkedHashSet<>();
 
     /** Carga inicial de las reservas desde MySQL hacia el Set en memoria. */
-    public ReservaServicio() {
+    private ReservaServicio() {
         cargarDesdeBase();
+    }
+
+    public static ReservaServicio getInstancia() {
+        if (instancia == null) {
+            instancia = new ReservaServicio();
+        }
+        return instancia;
     }
 
     /**

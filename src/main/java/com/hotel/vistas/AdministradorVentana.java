@@ -3,17 +3,18 @@ package com.hotel.vistas;
 import com.hotel.Main;
 import com.hotel.dao.ConserjeDao;
 import com.hotel.dao.HabitacionDao;
-import com.hotel.modelo.Administrador;
-import com.hotel.modelo.Conserje;
-import com.hotel.modelo.Habitacion;
-import com.hotel.modelo.Usuario;
+import com.hotel.excepciones.HotelException;
+import com.hotel.modelo.*;
 import com.hotel.modelo.enums.*;
+import com.hotel.servicios.ConserjeServicio;
+import com.hotel.servicios.PasajeroServicio;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -47,6 +48,7 @@ public class AdministradorVentana {
     @FXML private TableColumn<Usuario, TipoUsuario> colRol;
     @FXML private TableColumn<Usuario, Boolean> colActivo;
     @FXML private TableView<Usuario> tablaUsuarios;
+    @FXML private Text txtErrorAlGuardar;
     private Usuario usuarioSeleccionado; // Sirve para guardar el usuario que se clickea
     private ObservableList<Usuario> listaUsuarios = FXCollections.observableArrayList();
     private ConserjeDao conserjeDao = new ConserjeDao(); ///SOLO PARA PRUEBAS
@@ -217,6 +219,69 @@ public class AdministradorVentana {
     public void buscar(){
         ///NECESITO LOS SERVICE
     }
+
+    /** Guarda en base de datos y memoria a traves del service */
+
+    @FXML
+    public void guardar() {
+        TipoUsuario tipoUsuario = cmbTipoUsuario.getValue();
+        if (tipoUsuario == null) {
+            txtErrorAlGuardar.setText("Seleccione un tipo de usuario.");
+            return;
+        }
+
+        String nombre = txtNombre.getText().trim();
+        String apellido = txtApellido.getText().trim();
+        String dni = txtDni.getText().trim();
+        String telefono = txtTelefono.getText().trim();
+        String email = txtEmail.getText().trim();
+        String nombreUsuario = txtNombreUsuario.getText().trim();
+        String contrasenia = txtContrasenia.getText().trim();
+
+        try {
+            if (tipoUsuario == TipoUsuario.CONSERJE) {
+                Turno turno = cmbTurno.getValue();
+                if (turno == null || txtSalario.getText().trim().isEmpty()) {
+                    txtErrorAlGuardar.setText("Complete el turno y el salario del conserje.");
+                    return;
+                }
+
+                double salario;
+                try {
+                    salario = Double.parseDouble(txtSalario.getText().trim());
+                } catch (NumberFormatException e) {
+                    txtErrorAlGuardar.setText("El salario debe ser un número válido (ej: 450000.50).");
+                    return;
+                }
+
+                Conserje conserjeGuardar = new Conserje(nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, salario, turno);
+                conserjeGuardar.setActivo(chkActivo.isSelected());
+
+                ConserjeServicio.getInstancia().agregar(conserjeGuardar);
+
+            } else if (tipoUsuario == TipoUsuario.PASAJERO) {
+                Pasajero pasajeroGuardar = new Pasajero(nombre, apellido, email, dni, telefono, nombreUsuario, contrasenia, "", "");
+                pasajeroGuardar.setActivo(chkActivo.isSelected());
+
+                PasajeroServicio.getInstancia().agregar(pasajeroGuardar);
+            }
+
+            //cargarTablaUsuarios();
+            limpiarUsuario();
+            txtErrorAlGuardar.setText("Usuario registrado correctamente.");
+
+        } catch (HotelException e) {
+            txtErrorAlGuardar.setText(e.getMessage());
+        }
+    }
+
+
+
+
+
+
+
+
 
 
 
