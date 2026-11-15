@@ -2,6 +2,7 @@ package com.hotel.vistas;
 
 import com.hotel.dao.PasajeroDao;
 import com.hotel.modelo.Pasajero;
+import com.hotel.servicios.PasajeroServicio;
 import javafx.fxml.FXML;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -72,13 +73,9 @@ public class CrearCuentaVentana {
         }
 
         txtDatosIncorrectos.setText("");
-        //agregar service ESTE TRY ES SOLA PARA PRUEBAS
-        try {
-            pasajeroDao.agregar(new Pasajero(nombre, apellido, email, dni, telefono, usuario, password, origen, domicilio));
-            txtDatosIncorrectos.setText("Usuario creado exitosamente");
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.err.println("No se pudo cargar el pasajero en la base de datos");
-        }
+
+        ///GUARDAMOS EN SERVICE Y BD
+        PasajeroServicio.getInstancia().agregar(new Pasajero(nombre, apellido, email, dni, telefono, usuario, password, origen, domicilio));
+        txtDatosIncorrectos.setText("Usuario creado exitosamente");
     }
 }
