@@ -30,7 +30,7 @@ import java.util.Set;
  * OCUPADA la manejan el check-in y el check-out de ReservaServicio. RESERVADA depende de la fecha:
  * una habitación está RESERVADA solo mientras transcurre el período de una reserva sin check-in
  * (antes de que empiece sigue DISPONIBLE). Como la base no cambia sola, actualizarEstadosPorFecha()
- * se llama al iniciar sesión o al abrir la pantalla de habitaciones.
+ * se llama al crear el servicio (al arrancar el programa) y después de cada cambio en las reservas.
  *
  * Disponibilidad en un período: puedeOcupar() y listarDisponiblesEnPeriodo() consultan la ocupación
  * actual y las reservas ACTIVA (período = diaReservado + duracionEstadia días).
@@ -45,9 +45,12 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
     /** Colección en memoria que garantiza unicidad de habitaciones y conserva el orden de carga. */
     private final Set<Habitacion> habitaciones = new LinkedHashSet<>();
 
-    /** Carga inicial de las habitaciones desde MySQL hacia el Set en memoria. */
+    /**
+     * Carga inicial de las habitaciones desde MySQL hacia el Set en memoria. Antes de cargarlas pone al día
+     * los estados RESERVADA/DISPONIBLE según la fecha de hoy (la base no cambia sola al pasar los días).
+     */
     private HabitacionServicio() {
-        cargarDesdeBase();
+        actualizarEstadosPorFecha();
     }
 
     public static HabitacionServicio getInstancia() {
@@ -76,30 +79,47 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
         }
     }
 
+    /**
+     * Modifica los datos de una habitación. Las reglas se controlan contra lo que hay guardado en la base
+     * (las ventanas pueden haber cambiado ya el objeto que está en memoria). Si algo falla, la habitación
+     * en memoria vuelve a los datos de la base.
+     */
     @Override
     public void modificar(Habitacion habitacion) {
-        validarHabitacion(habitacion);
-
-        Habitacion actual = obtenerExistente(habitacion.getHabitacionId());
-
-        // La baja y la reactivación tienen sus propios métodos (con sus reglas):
-        // modificar conserva el 'activo' que ya tiene la habitación en la base
-        habitacion.setActivo(actual.isActivo());
-
-        // OCUPADA y RESERVADA dependen de las reservas: no se cambian a mano desde acá
-        boolean cambiaEstado = actual.getEstadoHabitacion() != habitacion.getEstadoHabitacion();
-        if (cambiaEstado && (esEstadoDeReserva(actual.getEstadoHabitacion())
-                || esEstadoDeReserva(habitacion.getEstadoHabitacion()))) {
-            throw new HotelException("Los estados OCUPADA y RESERVADA se manejan desde las reservas.");
-        }
-
-        verificarNumeroDisponible(habitacion.getNumeroHabitacion(), habitacion.getHabitacionId());
-
         try {
+            validarHabitacion(habitacion);
+
+            Habitacion enMemoria = obtenerExistente(habitacion.getHabitacionId());
+            Habitacion enBase = habitacionDao.buscarPorId(habitacion.getHabitacionId());
+            if (enBase == null) {
+                throw new HotelException("No existe una habitación con ID " + habitacion.getHabitacionId() + ".");
+            }
+
+            // OCUPADA y RESERVADA dependen de las reservas: no se cambian a mano desde acá
+            boolean cambiaEstado = enBase.getEstadoHabitacion() != habitacion.getEstadoHabitacion();
+            if (cambiaEstado && (esEstadoDeReserva(enBase.getEstadoHabitacion())
+                    || esEstadoDeReserva(habitacion.getEstadoHabitacion()))) {
+                throw new HotelException("Los estados OCUPADA y RESERVADA se manejan desde las reservas.");
+            }
+
+            // Desactivarla desde acá tiene la misma regla que baja(): no puede tener reservas pendientes
+            if (enBase.isActivo() && !habitacion.isActivo()
+                    && reservaDao.tieneReservasPendientes(habitacion.getHabitacionId(), LocalDate.now())) {
+                throw new HotelException("La habitación " + enBase.getNumeroHabitacion()
+                        + " tiene reservas pendientes: no se puede dar de baja.");
+            }
+
+            verificarNumeroDisponible(habitacion.getNumeroHabitacion(), habitacion.getHabitacionId());
+
             habitacionDao.modificar(habitacion);
-            habitaciones.remove(actual);
-            habitaciones.add(habitacion);
+            if (enMemoria != habitacion) {
+                copiarDatos(habitacion, enMemoria);
+            }
+        } catch (HotelException e) {
+            cargarDesdeBase();
+            throw e;
         } catch (SQLException e) {
+            cargarDesdeBase();
             throw ValidacionesServicio.errorDeBase("modificar la habitación", e);
         }
     }
@@ -190,9 +210,9 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
      * No toca las OCUPADA ni las NO_DISPONIBLE, y nunca cambia el estado de las reservas.
      *
      * Cuándo se llama (la base no cambia sola al pasar los días):
-     * - PENDIENTE en las vistas: al iniciar sesión o al abrir la pantalla de habitaciones, antes de listarlas.
-     * - Automáticamente desde ReservaServicio, después de agregar, modificar y checkOut, porque esas
-     *   acciones pueden cambiar qué habitación está reservada hoy.
+     * - Al crear el servicio (cuando arranca el programa), antes de cargar las habitaciones.
+     * - Automáticamente desde ReservaServicio, después de agregar, modificar, cancelar, checkIn y checkOut,
+     *   porque esas acciones cambian el estado de la habitación en la base y la memoria tiene que acompañarlo.
      */
     public void actualizarEstadosPorFecha() {
         try {
@@ -314,14 +334,43 @@ public class HabitacionServicio implements ICrud<Habitacion>, IBajaLogica, IList
         return porEstado;
     }
 
-    /** Carga inicial desde MySQL al Set en memoria. */
+    /**
+     * Carga las habitaciones desde MySQL al Set en memoria.
+     * Si una habitación ya estaba cargada, actualiza ese mismo objeto en lugar de reemplazarlo:
+     * así las tablas de las ventanas, que guardan esos objetos, muestran el estado nuevo con refresh().
+     */
     private void cargarDesdeBase() {
         try {
+            List<Habitacion> desdeBase = habitacionDao.listar();
+            List<Habitacion> anteriores = new ArrayList<>(habitaciones);
             habitaciones.clear();
-            habitaciones.addAll(habitacionDao.listar());
+            for (Habitacion nueva : desdeBase) {
+                Habitacion existente = null;
+                for (Habitacion anterior : anteriores) {
+                    if (anterior.getHabitacionId() == nueva.getHabitacionId()) {
+                        existente = anterior;
+                        break;
+                    }
+                }
+                if (existente == null) {
+                    habitaciones.add(nueva);
+                } else {
+                    copiarDatos(nueva, existente);
+                    habitaciones.add(existente);
+                }
+            }
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("cargar las habitaciones", e);
         }
+    }
+
+    /** Copia los datos de una habitación leída de la base en el objeto que ya estaba en memoria. */
+    private void copiarDatos(Habitacion desde, Habitacion hacia) {
+        hacia.setNumeroHabitacion(desde.getNumeroHabitacion());
+        hacia.setTipoHabitacion(desde.getTipoHabitacion());
+        hacia.setEstadoHabitacion(desde.getEstadoHabitacion());
+        hacia.setMotivoBloqueo(desde.getMotivoBloqueo());
+        hacia.setActivo(desde.isActivo());
     }
 
     /** Valida los datos de la habitación y que el estado sea coherente con el motivo de bloqueo. */

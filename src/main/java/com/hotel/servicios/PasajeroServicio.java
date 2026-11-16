@@ -68,21 +68,54 @@ public class PasajeroServicio implements ICrud<Pasajero>, IBajaLogica, IListar<P
      */
     @Override
     public void modificar(Pasajero pasajero) {
-        validarPasajero(pasajero);
-        Pasajero actual = obtenerExistente(pasajero.getUsuarioId());
-
-        verificarDniDisponible(pasajero.getDni(), pasajero.getUsuarioId());
-        verificarNombreUsuarioDisponible(pasajero.getNombreUsuario(), pasajero.getUsuarioId());
-
-        // La baja y la reactivación tienen sus propios métodos: se conserva el estado activo actual
-        pasajero.setActivo(actual.isActivo());
-        pasajero.setTipoUsuario(TipoUsuario.PASAJERO);
-
         try {
-            pasajeroDao.modificar(pasajero);
-            pasajerosPorId.put(pasajero.getUsuarioId(), pasajero);
+            validarPasajero(pasajero);
+            Pasajero actual = obtenerExistente(pasajero.getUsuarioId());
+
+            verificarDniDisponible(pasajero.getDni(), pasajero.getUsuarioId());
+            verificarNombreUsuarioDisponible(pasajero.getNombreUsuario(), pasajero.getUsuarioId());
+
+            // La baja y la reactivación tienen sus propios métodos: se conserva el estado activo actual
+            pasajero.setActivo(actual.isActivo());
+            pasajero.setTipoUsuario(TipoUsuario.PASAJERO);
+
+            try {
+                pasajeroDao.modificar(pasajero);
+                pasajerosPorId.put(pasajero.getUsuarioId(), pasajero);
+            } catch (SQLException e) {
+                throw ValidacionesServicio.errorDeBase("modificar el pasajero", e);
+            }
+        } catch (HotelException e) {
+            // La ventana puede haber cambiado el objeto del Map antes de llamar: vuelve a los datos guardados
+            if (pasajero != null) {
+                restaurarDesdeBase(pasajero.getUsuarioId());
+            }
+            throw e;
+        }
+    }
+
+    /** Devuelve el pasajero en memoria a los datos que tiene guardados en la base. */
+    private void restaurarDesdeBase(long id) {
+        Pasajero enMemoria = pasajerosPorId.get(id);
+        if (enMemoria == null) {
+            return;
+        }
+        try {
+            Pasajero enBase = pasajeroDao.buscarPorId(id);
+            if (enBase != null) {
+                enMemoria.setNombre(enBase.getNombre());
+                enMemoria.setApellido(enBase.getApellido());
+                enMemoria.setEmail(enBase.getEmail());
+                enMemoria.setDni(enBase.getDni());
+                enMemoria.setTelefono(enBase.getTelefono());
+                enMemoria.setNombreUsuario(enBase.getNombreUsuario());
+                enMemoria.setContrasenia(enBase.getContrasenia());
+                enMemoria.setActivo(enBase.isActivo());
+                enMemoria.setOrigen(enBase.getOrigen());
+                enMemoria.setDomicilioOrigen(enBase.getDomicilioOrigen());
+            }
         } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("modificar el pasajero", e);
+            // No se pudo leer la base: se informa el error original de la modificación
         }
     }
 

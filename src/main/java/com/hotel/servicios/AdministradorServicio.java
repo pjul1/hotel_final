@@ -42,22 +42,50 @@ public class AdministradorServicio {
      * y sincroniza la instancia en memoria.
      */
     public void modificar(Administrador administrador) {
-        validarAdministrador(administrador);
-
         try {
-            Administrador actual = obtenerAdministrador();
-            if (actual == null) {
-                throw new HotelException("No se encontró el administrador configurado en el sistema.");
+            validarAdministrador(administrador);
+
+            try {
+                Administrador actual = obtenerAdministrador();
+                if (actual == null) {
+                    throw new HotelException("No se encontró el administrador configurado en el sistema.");
+                }
+
+                // Se conserva el ID y el estado activo real de la base
+                administrador.setUsuarioId(actual.getUsuarioId());
+                administrador.setActivo(actual.isActivo());
+
+                administradorDao.modificar(administrador);
+                administradorEnMemoria = administrador;
+            } catch (SQLException e) {
+                throw ValidacionesServicio.errorDeBase("modificar los datos del administrador", e);
             }
+        } catch (HotelException e) {
+            // La ventana puede haber cambiado el objeto en memoria antes de llamar: vuelve a los datos guardados
+            restaurarDesdeBase();
+            throw e;
+        }
+    }
 
-            // Se conserva el ID y el estado activo real de la base
-            administrador.setUsuarioId(actual.getUsuarioId());
-            administrador.setActivo(actual.isActivo());
-
-            administradorDao.modificar(administrador);
-            administradorEnMemoria = administrador;
+    /** Devuelve el administrador en memoria a los datos que tiene guardados en la base. */
+    private void restaurarDesdeBase() {
+        if (administradorEnMemoria == null) {
+            return;
+        }
+        try {
+            Administrador enBase = administradorDao.obtenerAdministrador();
+            if (enBase != null) {
+                administradorEnMemoria.setNombre(enBase.getNombre());
+                administradorEnMemoria.setApellido(enBase.getApellido());
+                administradorEnMemoria.setEmail(enBase.getEmail());
+                administradorEnMemoria.setDni(enBase.getDni());
+                administradorEnMemoria.setTelefono(enBase.getTelefono());
+                administradorEnMemoria.setNombreUsuario(enBase.getNombreUsuario());
+                administradorEnMemoria.setContrasenia(enBase.getContrasenia());
+                administradorEnMemoria.setActivo(enBase.isActivo());
+            }
         } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("modificar los datos del administrador", e);
+            // No se pudo leer la base: se informa el error original de la modificación
         }
     }
 
