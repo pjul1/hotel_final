@@ -1,0 +1,1 @@
+El paquete `com.hotel.controller` implementa una interfaz alternativa por consola desacoplada de la vista gráfica (`com.hotel.vistas`). Permite ejecutar y verificar de forma directa todas las operaciones ABMCL y reglas de negocio del sistema sobre la capa de servicios. 
