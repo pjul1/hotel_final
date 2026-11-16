@@ -147,10 +147,12 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
 
             reservaDao.cambiarEstado(reservaId, EstadoReserva.CANCELADA);
             reserva.setEstadoReserva(EstadoReserva.CANCELADA);
-            liberarSiEstaReservada(reserva.getHabitacion());
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("cancelar la reserva", e);
         }
+
+        // Si la habitación estaba RESERVADA por esta reserva, vuelve a DISPONIBLE (en la base y en memoria)
+        habitacionServicio.actualizarEstadosPorFecha();
     }
 
     /**
@@ -174,9 +176,11 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
                         + " terminó el " + fin + ": ya no se puede hacer el check-in.");
             }
 
-            Habitacion habitacion = reserva.getHabitacion();
-            if (!habitacion.isActivo() || habitacion.getEstadoHabitacion() == EstadoHabitacion.NO_DISPONIBLE) {
-                throw new HabitacionNoDisponible("La habitación " + habitacion.getNumeroHabitacion()
+            // Se controla con el estado actual de la base (la copia de la reserva puede estar vieja)
+            Habitacion habitacion = habitacionDao.buscarPorId(reserva.getHabitacion().getHabitacionId());
+            if (habitacion == null || !habitacion.isActivo()
+                    || habitacion.getEstadoHabitacion() == EstadoHabitacion.NO_DISPONIBLE) {
+                throw new HabitacionNoDisponible("La habitación " + reserva.getHabitacion().getNumeroHabitacion()
                         + " no está disponible para el check-in.");
             }
 
@@ -184,9 +188,13 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
             reservaDao.registrarCheckIn(reservaId, ahora);
             reserva.setCheckIn(ahora);
             habitacion.setEstadoHabitacion(EstadoHabitacion.OCUPADA);
+            reserva.setHabitacion(habitacion);
         } catch (SQLException e) {
             throw ValidacionesServicio.errorDeBase("registrar el check-in", e);
         }
+
+        // La habitación pasó a OCUPADA en la base: se actualiza también la que muestran las ventanas
+        habitacionServicio.actualizarEstadosPorFecha();
     }
 
     /** Registra la salida del pasajero (ahora mismo), cumple la reserva y deja la habitación DISPONIBLE. */
@@ -334,14 +342,6 @@ public class ReservaServicio implements ICrud<Reserva>, IListar<Reserva> {
         if (reserva.getCheckIn() != null) {
             throw new ReservaInvalidaException("No se puede " + accion + " la reserva " + reserva.getReservaId()
                     + ": el pasajero ya hizo el check-in.");
-        }
-    }
-
-    /** Deja DISPONIBLE una habitación solo si estaba RESERVADA (no pisa un bloqueo ni una ocupación). */
-    private void liberarSiEstaReservada(Habitacion habitacion) throws SQLException {
-        if (habitacion.getEstadoHabitacion() == EstadoHabitacion.RESERVADA) {
-            habitacionDao.actualizarEstado(habitacion.getHabitacionId(), EstadoHabitacion.DISPONIBLE, null);
-            habitacion.setEstadoHabitacion(EstadoHabitacion.DISPONIBLE);
         }
     }
 

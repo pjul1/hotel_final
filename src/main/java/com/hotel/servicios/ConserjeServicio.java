@@ -68,24 +68,57 @@ public class ConserjeServicio implements ICrud<Conserje>, IBajaLogica, IListar<C
      */
     @Override
     public void modificar(Conserje conserje) {
-        validarConserje(conserje);
-        Conserje actual = obtenerExistente(conserje.getUsuarioId());
-
-        verificarDniDisponible(conserje.getDni(), conserje.getUsuarioId());
-        verificarNombreUsuarioDisponible(conserje.getNombreUsuario(), conserje.getUsuarioId());
-
-        // La baja y la reactivación tienen sus propios métodos: se conserva el estado actual
-        conserje.setActivo(actual.isActivo());
-        conserje.setTipoUsuario(TipoUsuario.CONSERJE);
-
         try {
-            conserjeDao.modificar(conserje);
-            int indice = conserjes.indexOf(actual);
-            if (indice >= 0) {
-                conserjes.set(indice, conserje);
+            validarConserje(conserje);
+            Conserje actual = obtenerExistente(conserje.getUsuarioId());
+
+            verificarDniDisponible(conserje.getDni(), conserje.getUsuarioId());
+            verificarNombreUsuarioDisponible(conserje.getNombreUsuario(), conserje.getUsuarioId());
+
+            // La baja y la reactivación tienen sus propios métodos: se conserva el estado actual
+            conserje.setActivo(actual.isActivo());
+            conserje.setTipoUsuario(TipoUsuario.CONSERJE);
+
+            try {
+                conserjeDao.modificar(conserje);
+                int indice = conserjes.indexOf(actual);
+                if (indice >= 0) {
+                    conserjes.set(indice, conserje);
+                }
+            } catch (SQLException e) {
+                throw ValidacionesServicio.errorDeBase("modificar el conserje", e);
+            }
+        } catch (HotelException e) {
+            // La ventana puede haber cambiado el objeto de la lista antes de llamar: vuelve a los datos guardados
+            if (conserje != null) {
+                restaurarDesdeBase(conserje.getUsuarioId());
+            }
+            throw e;
+        }
+    }
+
+    /** Devuelve el conserje en memoria a los datos que tiene guardados en la base. */
+    private void restaurarDesdeBase(long id) {
+        Conserje enMemoria = buscarPorId(id);
+        if (enMemoria == null) {
+            return;
+        }
+        try {
+            Conserje enBase = conserjeDao.buscarPorId(id);
+            if (enBase != null) {
+                enMemoria.setNombre(enBase.getNombre());
+                enMemoria.setApellido(enBase.getApellido());
+                enMemoria.setEmail(enBase.getEmail());
+                enMemoria.setDni(enBase.getDni());
+                enMemoria.setTelefono(enBase.getTelefono());
+                enMemoria.setNombreUsuario(enBase.getNombreUsuario());
+                enMemoria.setContrasenia(enBase.getContrasenia());
+                enMemoria.setActivo(enBase.isActivo());
+                enMemoria.setSalario(enBase.getSalario());
+                enMemoria.setTurno(enBase.getTurno());
             }
         } catch (SQLException e) {
-            throw ValidacionesServicio.errorDeBase("modificar el conserje", e);
+            // No se pudo leer la base: se informa el error original de la modificación
         }
     }
 
