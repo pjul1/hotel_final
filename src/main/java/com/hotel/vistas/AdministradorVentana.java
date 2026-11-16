@@ -501,6 +501,10 @@ public class AdministradorVentana {
             habitacionSeleccionada.setNumeroHabitacion(numeroHabitacion);
             habitacionSeleccionada.setTipoHabitacion(tipo);
             habitacionSeleccionada.setEstadoHabitacion(estado);
+            if(habitacionSeleccionada.getEstadoHabitacion() != EstadoHabitacion.NO_DISPONIBLE){
+                cmbMotivoBloqueo.setValue(null);
+                motivo = null;
+            }
             habitacionSeleccionada.setMotivoBloqueo(motivo);
             habitacionSeleccionada.setActivo(chkHabitacionActiva.isSelected());
 
