@@ -180,7 +180,7 @@ public class AdministradorVentana {
             // 4 Exportar Habitaciones
             writer.println("\n-- TABLA HABITACION");
             for (Habitacion h : HabitacionServicio.getInstancia().listar()) {
-                writer.println("INSERT INTO Habitacion (habitacionId, numeroHabitacion, tipoHabitacion, estadoHabitacion, motivoBloqueo, activa) VALUES (" +
+                writer.println("INSERT INTO Habitacion (habitacionId, numeroHabitacion, tipoHabitacion, estadoHabitacion, motivoBloqueo, activo) VALUES (" +
                         h.getHabitacionId() + ", " + h.getNumeroHabitacion() + ", '" + h.getTipoHabitacion() + "', '" +
                         h.getEstadoHabitacion() + "', '" + h.getMotivoBloqueo() + "', " + h.isActivo() + ");");
             }

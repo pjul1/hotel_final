@@ -150,6 +150,8 @@ public class ConserjeVentana {
     @FXML
     public void actualizarHabitacionesDisponiblesReserva() {
         cmbHabitacionReserva.getItems().clear();
+        lblMensajeReserva.setText("");
+
         LocalDate fecha = dpFechaIngreso.getValue();
         String textoDias = txtDuracionEstadia.getText().trim();
 
@@ -157,17 +159,22 @@ public class ConserjeVentana {
 
         try {
             int dias = Integer.parseInt(textoDias);
-            if (dias <= 0) return;
+            List<Habitacion> disponibles = HabitacionServicio.getInstancia()
+                    .listarDisponiblesEnPeriodo(fecha, dias);
 
             List<Integer> libres = new ArrayList<>();
-            for (Habitacion h : HabitacionServicio.getInstancia().listar()) {
-                if (habitacionDisponibleEnFechas(h, fecha, dias)) {
-                    libres.add(h.getNumeroHabitacion());
-                }
+            for (Habitacion h : disponibles) {
+                libres.add(h.getNumeroHabitacion());
             }
             cmbHabitacionReserva.setItems(FXCollections.observableArrayList(libres));
-        } catch (NumberFormatException ignored) {}
+
+        } catch (NumberFormatException e) {
+            lblMensajeReserva.setText("La cantidad de días debe ser un número válido.");
+        } catch (HotelException e) {
+            lblMensajeReserva.setText(e.getMessage());
+        }
     }
+
 
     @FXML
     public void calcularPrecioSugerido() {
@@ -206,11 +213,6 @@ public class ConserjeVentana {
             int pasajeros = Integer.parseInt(txtCantidadPasajeros.getText().trim());
             double precio = Double.parseDouble(txtPrecioReserva.getText().trim());
             Habitacion habitacion = buscarHabitacionPorNumero(numHab);
-
-            if (!habitacionDisponibleEnFechas(habitacion, fecha, dias)) {
-                lblMensajeReserva.setText("Habitación no disponible en esas fechas.");
-                return;
-            }
 
             Reserva nueva = new Reserva();
             nueva.setPasajero(pasajeroEncontradoParaReserva);
@@ -288,21 +290,26 @@ public class ConserjeVentana {
     @FXML
     public void verificarDisponibilidadPorFechas() {
         cmbFiltroEstadoHab.setValue(null);
+        lblMensajeHabitacion.setText("");
+
         LocalDate desde = dpConsultaDesde.getValue();
         String textoDias = txtConsultaDias.getText().trim();
         if (desde == null || textoDias.isEmpty()) return;
 
         try {
             int dias = Integer.parseInt(textoDias);
-            List<Habitacion> libres = new ArrayList<>();
-            for (Habitacion h : HabitacionServicio.getInstancia().listar()) {
-                if (habitacionDisponibleEnFechas(h, desde, dias)) {
-                    libres.add(h);
-                }
-            }
+            List<Habitacion> libres = HabitacionServicio.getInstancia().listarDisponiblesEnPeriodo(desde, dias);
+
             tablaHabitaciones.setItems(FXCollections.observableArrayList(libres));
-        } catch (NumberFormatException ignored) {}
+            lblMensajeHabitacion.setText("Mostrando " + libres.size() + " habitaciones disponibles.");
+
+        } catch (NumberFormatException e) {
+            lblMensajeHabitacion.setText("Los días deben ser un número válido.");
+        } catch (HotelException e) {
+            lblMensajeHabitacion.setText(e.getMessage());
+        }
     }
+
 
     @FXML
     public void seleccionarHabitacionTabla() {
@@ -393,18 +400,6 @@ public class ConserjeVentana {
             if (h.getNumeroHabitacion() == numero) return h;
         }
         return null;
-    }
-    private boolean habitacionDisponibleEnFechas(Habitacion hab, LocalDate inicioNuevo, int diasNuevos) {
-        if (!hab.isActivo() || hab.getEstadoHabitacion() == EstadoHabitacion.NO_DISPONIBLE) return false;
-        LocalDate finNuevo = inicioNuevo.plusDays(diasNuevos);
-        for (Reserva r : ReservaServicio.getInstancia().listar()) {
-            if (r.getHabitacion().getHabitacionId() != hab.getHabitacionId()) continue;
-            if (r.getEstadoReserva() == EstadoReserva.CANCELADA) continue; ///CONTINUE ES COMO UN BREAK PERO NO SALE COMPLETO SINO QUE SOLO SALTEA LA VUELTA
-            LocalDate iniEx = r.getDiaReservado().toLocalDate();
-            LocalDate finEx = iniEx.plusDays(r.getDuracionEstadia());
-            if (inicioNuevo.isBefore(finEx) && finNuevo.isAfter(iniEx)) return false;
-        }
-        return true;
     }
     private double obtenerTarifaDiaria(TipoHabitacion tipo) {
         if (tipo == null) return 0.0;

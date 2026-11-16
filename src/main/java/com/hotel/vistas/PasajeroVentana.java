@@ -81,8 +81,9 @@ public class PasajeroVentana {
     public void actualizarDisponibilidadYPrecio() {
         cmbHabitacionDisponible.getItems().clear();
         lblPrecioTotal.setText("ARS 0.00");
+        lblMensajeReserva.setText("");
 
-        LocalDate fechaInicio = dpFechaIngreso.getValue(); ///USO LOCALDATE PORQUE DATAPICKER DEVUELVE LOCALDATE
+        LocalDate fechaInicio = dpFechaIngreso.getValue();
         TipoHabitacion tipo = cmbTipoHabitacion.getValue();
         String textoDias = txtDuracionEstadia.getText().trim();
 
@@ -90,54 +91,29 @@ public class PasajeroVentana {
             return;
         }
 
-        int dias;
         try {
-            dias = Integer.parseInt(textoDias);
-            if (dias <= 0) return;
+            int dias = Integer.parseInt(textoDias);
+            List<Habitacion> disponibles = HabitacionServicio.getInstancia().listarDisponiblesEnPeriodo(fechaInicio, dias);
+
+            double total = dias * obtenerTarifaDiaria(tipo);
+            lblPrecioTotal.setText(String.format("ARS %.2f", total));
+
+            List<Integer> numerosDisponibles = new ArrayList<>();
+            for (Habitacion h : disponibles) {
+                if (h.getTipoHabitacion() == tipo) {
+                    numerosDisponibles.add(h.getNumeroHabitacion());
+                }
+            }
+            cmbHabitacionDisponible.setItems(FXCollections.observableArrayList(numerosDisponibles));
+
         } catch (NumberFormatException e) {
-            return;
+            lblMensajeReserva.setText("Los días deben ser un número válido.");
+        } catch (HotelException e) {
+            lblMensajeReserva.setText(e.getMessage());
         }
-
-        double total = dias * obtenerTarifaDiaria(tipo);
-        lblPrecioTotal.setText(String.format("ARS %.2f", total));
-
-        List<Integer> numerosDisponibles = new ArrayList<>();
-        for (Habitacion h : HabitacionServicio.getInstancia().listar()) {
-            if (h.getTipoHabitacion() == tipo && habitacionDisponibleEnFechas(h, fechaInicio, dias)) {
-                numerosDisponibles.add(h.getNumeroHabitacion());
-            }
-        }
-
-        cmbHabitacionDisponible.setItems(FXCollections.observableArrayList(numerosDisponibles));
     }
 
-    /** Compobamos que el rango solicitado no se solape con reservas activas. */
-    private boolean habitacionDisponibleEnFechas(Habitacion habitacion, LocalDate inicioNuevo, int diasNuevos) {
-        if (!habitacion.isActivo() || habitacion.getEstadoHabitacion() == EstadoHabitacion.NO_DISPONIBLE) {
-            return false;
-        }
-
-        LocalDate finNuevo = inicioNuevo.plusDays(diasNuevos); /** plusdays suma una cantidad de días a una fecha y te devuelve la fecha resultante */
-
-        for (Reserva r : ReservaServicio.getInstancia().listar()) {
-            if (r.getHabitacion().getHabitacionId() != habitacion.getHabitacionId()) {
-                continue;
-            }
-            if (r.getEstadoReserva() == EstadoReserva.CANCELADA) {
-                continue;
-            }
-
-            LocalDate inicioExistente = r.getDiaReservado().toLocalDate();
-            LocalDate finExistente = inicioExistente.plusDays(r.getDuracionEstadia());
-
-            boolean seSolapan = inicioNuevo.isBefore(finExistente) && finNuevo.isAfter(inicioExistente);
-            if (seSolapan) {
-                return false;
-            }
-        }
-        return true;
-    }
-
+    
     @FXML
     public void confirmarReserva() {
         lblMensajeReserva.setText("");
@@ -173,12 +149,6 @@ public class PasajeroVentana {
         try {
             int dias = Integer.parseInt(txtDuracionEstadia.getText().trim());
             int pasajeros = Integer.parseInt(txtCantidadPasajeros.getText().trim());
-
-            if (!habitacionDisponibleEnFechas(habitacionElegida, fechaInicio, dias)) {
-                lblMensajeReserva.setText("La habitación seleccionada ya no está disponible en esas fechas");
-                actualizarDisponibilidadYPrecio();
-                return;
-            }
 
             double precioFinal = dias * obtenerTarifaDiaria(tipo);
 
